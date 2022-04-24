@@ -1,0 +1,163 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>Introducción al Desarrollo de Aplicaciones con Ruby on Rails | AIEP</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.css" integrity="sha512-ITH3NSfntO7uI5n+BnxGNXpzDUoOsmAXuG37UDONLxNYIdc0EBBOOQ1xyc+t9ag9ETSuBXFApx+Rod0uURfDYw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reset.min.css" integrity="sha512-Mjxkx+r7O/OLQeKeIBCQ2yspG1P5muhAtv/J+p2/aPnSenciZWm5Wlnt+NOUNA4SHbnBIE/R2ic0ZBiCXdQNUg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/theme/solarized.min.css" integrity="sha512-sUF1FAUpi9yPXCDOPsRwzh71zrCVkcT4SfwxBlQeHwMbH1aTGcSdI00GRLaH6iXRSBTazGH/u6sGQTc1tGqofg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- Theme used for syntax highlighted code -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/highlight/zenburn.min.css" integrity="sha512-JPxjD2t82edI35nXydY/erE9jVPpqxEJ++6nYEoZEpX2TRsmp2FpZuQqZa+wBCen5U16QZOkMadGXHCfp+tUdg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  </head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+				<section data-separator="---" data-markdown data-line-numbers>
+    			<textarea data-template>
+						## [Desarrollo de Aplicaciones con Ruby on Rails](#)
+						#### Profesor: Fernando Ciballero
+						---
+						## [Unidad 2: Autenticación con Devise](#)
+						## [Clase 4](#)
+						### Introducción.
+						---
+						## [Autenticación con Devise: Agregar autenticación con Devise.](#)
+						
+						- En muchos sitios web es común tener cuentas de usuario que nos permiten acceder a contenidos personalizados.
+						- Para ello necesitamos siempre crear un sistema en autenticación de usuario.
+						- Existe una gema para Ruby llamada Devise que nos permite agregar un sistema de autenticación de usuario robusto
+						y facil de configurar.
+						---
+						## [Leyendo la documentación.](#)
+
+						Los pasos para instalar Devise son muy sencillos y están especificados en la [documentación oficial](https://github.com/heartcombo/devise)
+						---
+						## [Realizando una integración acorde a la documentación.](#)
+						
+						Como primer paso debemos agregar la gema al Gemfile
+
+						```ruby
+						gem 'devise', '~> 4.8', '>= 4.8.1'
+						```
+						Luego
+
+						```console
+						$ bundle
+						```
+						---
+						Una vez instalada la gema ejecutamos el generador de todos los archivos necesarios para la configuración inicial de devise:
+
+						```console
+						$ rails generate devise:install
+						```
+						---
+						Esto nos mostrará un mensaje conteniendo una serie de configuraciones sugeridas:
+						---
+						<img src="https://res.cloudinary.com/dhbkl5d9a/image/upload/v1653261810/modulo8/devise_config_wa5myf.png" alt="" width="700" height="650">
+
+						---
+						Ahora generamos el modelo, migración rutas y vistas que vamos a usar para hacer la autenticación
+
+						```console
+						$ rails generate devise User
+						```
+
+						```ruby
+						class User < ApplicationRecord
+							# Include default devise modules. Others available are:
+							# :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
+							devise :database_authenticatable, :registerable,
+										:recoverable, :rememberable, :validatable
+						end
+						```
+						---
+						Como se puede apreciar en el archivo de la migración vamos a tener creados 2 campos:
+						- **email**
+						- **encrypted_password**(que almacenará el password encryptado)
+						---
+						```ruby
+						class DeviseCreateUsers < ActiveRecord::Migration[6.1]
+							def change
+								create_table :users do |t|
+									## Database authenticatable
+									t.string :email,              null: false, default: ""
+									t.string :encrypted_password, null: false, default: ""
+
+									## Recoverable
+									t.string   :reset_password_token
+									t.datetime :reset_password_sent_at
+
+									## Rememberable
+									t.datetime :remember_created_at
+
+									t.timestamps null: false
+								end
+
+								add_index :users, :email,                unique: true
+								add_index :users, :reset_password_token, unique: true
+							end
+						end
+						```
+						---
+						```ruby
+						Rails.application.routes.draw do
+							devise_for :users
+							root 'tv_shows#index'
+						end
+						```
+
+						<img src="https://res.cloudinary.com/dhbkl5d9a/image/upload/v1653263727/modulo8/devise_routes_a5jova.png" alt="">
+
+						---
+						Con el siguiente comando vamos a generar el html de las vistas que se encuentran dentro de **app/views/devise**
+
+						```console
+						$ rails generate devise:views
+						```
+						En principio utilizaremos las vistas que se encuentran en: 
+						- **app/views/devise/registrations** (las vistas para registrarse como usuario)
+						- **app/views/devise/sessions** (las vistas para loguearse como usuario)
+
+						---
+						## [Devise y métodos helpers](#)
+
+						Devise nos provee de unos "helpers" que nos ayudan a resolver de manera sencilla que puede y que no puede ver un usuario en particular.
+
+						---
+						Estos son:
+
+						- **current_user**: este helper nos permiten acceder a la información del usuario actualmente logueado.
+						- **user_signed_in?**: mediante este helper podemos restringir partes de un sitio web o mostrar vistas alternativas segun el status de usuario actual.
+						---
+						## [Que aprendimos hoy?](#)
+						- Aprendimos sobre la configuración básica de devise.
+						- Vimos los helpers que tenemos disponibles en devise.
+						---
+						## [Bibliografía](#)
+						- [https://github-wiki-see.page](https://github-wiki-see.page/m/heartcombo/devise/wiki/How-To%3A-Add-an-Admin-Role)
+						- [Documentación devise](https://github.com/heartcombo/devise)
+				  </textarea>
+				</section>
+			</div>
+		</div>
+
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.js" integrity="sha512-fEgazVdZLNymIm9n+b2jtCrM4DQiqNTfLNUxbsGSFUJpYemf9A8GxgJ3VAfU/Lc6yZkDdEOdekBDZtG/mf73fQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/notes/notes.min.js" integrity="sha512-nLsCkPS/rdxRVOkxiKnld9KhQ24V/5kRChzSZ3MoFODykbWyBlQRsHLrbpN3J4LabYBnXIp1EnRIo3ifvyiQIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/markdown/markdown.min.js" integrity="sha512-QAU7Ux8iEB53koLKFCtddfFp0D1+uQWoX3ROnRDLeiE98XHOkMciaup0Spc014jQAuJaqz8VjUZdBqriheI4Lg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/highlight/highlight.min.js" integrity="sha512-U3fPDUX5bMrn1wnYqjaK44MFA9E6MKS+zPAg9WPAGF5XhReBeDj3FGaA831CjueG+YJxYA3WaO/m33kMIoOs/A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+			// More info about initialization & config:
+			// - https://revealjs.com/initialization/
+			// - https://revealjs.com/config/
+			Reveal.initialize({
+				hash: true,
+
+				// Learn about plugins: https://revealjs.com/plugins/
+				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
+			});
+		</script>
+	</body>
+</html>

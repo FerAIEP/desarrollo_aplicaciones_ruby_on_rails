@@ -1,0 +1,268 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>Introducción al Desarrollo de Aplicaciones con Ruby on Rails | AIEP</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.css" integrity="sha512-ITH3NSfntO7uI5n+BnxGNXpzDUoOsmAXuG37UDONLxNYIdc0EBBOOQ1xyc+t9ag9ETSuBXFApx+Rod0uURfDYw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reset.min.css" integrity="sha512-Mjxkx+r7O/OLQeKeIBCQ2yspG1P5muhAtv/J+p2/aPnSenciZWm5Wlnt+NOUNA4SHbnBIE/R2ic0ZBiCXdQNUg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/theme/solarized.min.css" integrity="sha512-sUF1FAUpi9yPXCDOPsRwzh71zrCVkcT4SfwxBlQeHwMbH1aTGcSdI00GRLaH6iXRSBTazGH/u6sGQTc1tGqofg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- Theme used for syntax highlighted code -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/highlight/zenburn.min.css" integrity="sha512-JPxjD2t82edI35nXydY/erE9jVPpqxEJ++6nYEoZEpX2TRsmp2FpZuQqZa+wBCen5U16QZOkMadGXHCfp+tUdg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  </head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+				<section data-separator="---" data-markdown data-line-numbers>
+    			<textarea data-template>
+						## [Desarrollo de Aplicaciones con Ruby on Rails](#)
+						#### Profesor: Fernando Ciballero
+						---
+						### [Unidad 3: Modelos con relaciones N a N](#)
+						### [Clase 9](#)
+						### Borrado en cascada en relaciones N a N.
+						---
+						## [Implementación de relaciones N a N con tres modelos](#)
+
+						Hoy vamos a ver otro tipo de relación entre tablas muchos a muchos.
+						
+						---
+						## [has_many :through](#)
+
+						- Una asociación [has_many :through](#) se usa a menudo para establecer una conexión de [muchos a muchos](#) con otro [modelo](#). 
+						- Esta asociación indica que el modelo declarante puede coincidir con cero o más instancias de otro modelo procediendo 
+						[a través de un tercer modelo](#).
+
+						---
+
+						Ahora vamos a desarrollar un ejemplo utilizando la asociación con 3 modelos has_many: through
+
+						<img src="https://res.cloudinary.com/dhbkl5d9a/image/upload/v1653845532/modulo8/many_to_many_2_l7qcbs.png" alt="">
+						
+						---
+
+						Vamos a generar el modelo y la migración de la tabla genre:
+
+						```console
+						$ rails g model genre name:string description:text
+						```
+
+						```ruby
+						class CreateGenres < ActiveRecord::Migration[6.1]
+							def change
+								create_table :genres do |t|
+									t.string :name
+									t.text :description
+
+									t.timestamps
+								end
+							end
+						end
+						```
+
+						---
+
+						Ahora vamos a crear un modelo GenreTvShow que va a vincular los modelos Genre y TvShow
+						
+						```console
+						$ rails g model GenreTvShow genre:references tv_show:references
+						```
+
+						```ruby
+						class CreateGenreTvShows < ActiveRecord::Migration[6.1]
+							def change
+								create_table :genre_tv_shows do |t|
+									t.references :genre, null: false, foreign_key: true
+									t.references :tv_show, null: false, foreign_key: true
+
+									t.timestamps
+								end
+							end
+						end
+						```
+
+						---
+
+						Luego establecemos las relaciones entre los modelos:
+
+						```ruby
+						# app/models/genre.rb
+						class Genre < ApplicationRecord
+							has_many :genre_tv_shows
+							has_many :tv_shows, through: :genre_tv_shows
+						end
+						```
+
+						```ruby
+						# app/models/genre_tv_show.rb
+						class GenreTvShow < ApplicationRecord
+							belongs_to :genre
+							belongs_to :tv_show
+						end
+						```
+
+						```ruby
+						# app/models/tv_show.rb
+						class TvShow < ApplicationRecord
+							has_many :genre_tv_shows
+							has_many :genres, through: :genre_tv_shows
+							# ...
+						end
+						```
+
+						---
+
+						Ejecutamos las migraciones:
+
+						```console
+						$ rails db:migrate
+						```
+
+						---
+
+						Ahora podemos ir a la console y crear una series de géneros cinematográficos
+
+						```console
+						Genre.create!([
+							{name: 'drama', description: 'films that focus primarily on the development of a relationship between the protagonists'},
+							{name: 'documentary', description: 'refers to subjects of scientific, social or cultural interest, among others.'},
+							{name: 'thriller', description: 'made with the intention of provoking tension in the viewer.' },
+							{name: 'history', description: 'The action takes place in the past, often with the intention of historical reenactment.' },
+							{name: 'action', description: 'whose plot involves a moral interaction between good and evil' }
+						])
+						```
+
+						```console
+						tv_show = TvShow.find_by(name: 'Squid Game')
+						genre = Genre.find_by(name: 'thriller')
+						tv_show.genres << genre
+						```
+
+						---
+
+						Ahora veremos como implementar la relación has_many :through en un formulario:
+
+						```erb
+						<!--app/views/tv_shows/_form.html.erb-->
+						<%= form_with(model: tv_show) do |form| %>
+							<!--...-->
+							<div class="field">
+								<%= form.collection_select(:genre_ids, Genre.all, :id, :name,{ prompt: true }, { multiple: true }) %>
+							</div>
+							<!--...-->>
+						<% end %>
+						```
+
+						---
+						Agregamos el parametro genre_ids que va a almacenar un array con los generos seleccionados:
+
+						```ruby
+						# app/controllers/tv_shows_controller.rb
+						class TvShowsController < ApplicationController
+							# ...
+							def tv_show_params
+								params.require(:tv_show).permit(
+									# ...
+									genre_ids: []
+								)
+							end
+						end
+						```
+
+						---
+						
+						Una vez creado el nuevo registro podemos listar los generos en [app/views/tv_shows/show.html.erb](#)
+
+						```erb
+						<!--app/views/tv_shows/show.html.erb-->
+						<p><strong>Genres:</strong></p>
+						<ul>
+							<% if @tv_show.genres %>
+								<% @tv_show.genres.each do |genre|%>
+									<li><strong><%= "#{genre.id}" %>: </strong><%= genre.name %></li>
+								<% end %>
+							<% else %>
+								<% 'No Genres Added!!!'%>
+							<% end %>
+						</ul>
+						```
+						---
+						### [Borrado en cascada en relaciones N a N](#)
+
+						Podemos configurar los modelos para eliminar todas las asociaciones en la tabla genre_tv_shows en caso de eliminar
+						un genre o un tv_show mediante el atributo [dependent: :destroy](#)
+
+						```ruby
+						class Genre < ApplicationRecord
+							has_many :genre_tv_shows, dependent: :destroy
+							has_many :tv_shows, through: :genre_tv_shows
+						end
+						```
+
+						```ruby
+						class TvShow < ApplicationRecord
+							has_many :genre_tv_shows, dependent: :destroy
+							has_many :genres, through: :genre_tv_shows
+							# ...
+						end
+						```
+						---
+						## [Asignar generos vía checkbox](#)
+
+						Como alternativa podemos generar en el formulario un selector de generos a modo de checkboxes: 
+
+						```erb
+						<!--app/views/tv_shows/_form.html.erb-->
+						<%= form.collection_check_boxes :genre_ids, Genre.all, :id, :name %>
+						```
+						---
+						#### [Conclusiones:](#)
+						
+						Como hemos visto Rails ofrece dos formas diferentes de declarar una relación de muchos a muchos entre modelos. 
+						- La primera forma es usar [has_and_belongs_to_many](#), que te permite hacer la asociación directamente.
+
+						- La segunda forma de declarar una relación de muchos a muchos es usar [has_many :through](#). Esto hace que la asociación 
+						sea indirecta, a través de un [modelo de unión](#).
+
+						---
+						- La regla general más simple es que debe configurar una relación [has_many :through](#) si necesita trabajar con el modelo de relación 
+						como una entidad independiente. 
+						
+						- Si no necesita hacer nada con el modelo de relación, puede ser más sencillo configurar una 
+						relación [has_and_belongs_to_many](#) (aunque deberá recordar crear la tabla de combinación en la base de datos).
+
+						---
+						- Es conveniente usar [has_many :through](#) si necesita ejecutar validaciones, callbacks o atributos adicionales en el modelo de unión.
+						---
+						## [Que aprendimos hoy?](#)
+						- Aprendimos como crear una relación has_many :through.
+						- Vimos como implementar un formulario en una relación has_many :through.
+						- Vimos como configurar un borrado en cascada.
+						---
+						## [Bibliografía](#)
+						- [https://guides.rubyonrails.org/association_basics.html](https://guides.rubyonrails.org/association_basics.html)
+						- [https://guides.rubyonrails.org/form_helpers.html](https://guides.rubyonrails.org/form_helpers.html)
+				  </textarea>
+				</section>
+			</div>
+		</div>
+
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.js" integrity="sha512-fEgazVdZLNymIm9n+b2jtCrM4DQiqNTfLNUxbsGSFUJpYemf9A8GxgJ3VAfU/Lc6yZkDdEOdekBDZtG/mf73fQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/notes/notes.min.js" integrity="sha512-nLsCkPS/rdxRVOkxiKnld9KhQ24V/5kRChzSZ3MoFODykbWyBlQRsHLrbpN3J4LabYBnXIp1EnRIo3ifvyiQIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/markdown/markdown.min.js" integrity="sha512-QAU7Ux8iEB53koLKFCtddfFp0D1+uQWoX3ROnRDLeiE98XHOkMciaup0Spc014jQAuJaqz8VjUZdBqriheI4Lg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/highlight/highlight.min.js" integrity="sha512-U3fPDUX5bMrn1wnYqjaK44MFA9E6MKS+zPAg9WPAGF5XhReBeDj3FGaA831CjueG+YJxYA3WaO/m33kMIoOs/A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+			// More info about initialization & config:
+			// - https://revealjs.com/initialization/
+			// - https://revealjs.com/config/
+			Reveal.initialize({
+				hash: true,
+
+				// Learn about plugins: https://revealjs.com/plugins/
+				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
+			});
+		</script>
+	</body>
+</html>

@@ -1,0 +1,121 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>Introducción al Desarrollo de Aplicaciones con Ruby on Rails | AIEP</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.css" integrity="sha512-ITH3NSfntO7uI5n+BnxGNXpzDUoOsmAXuG37UDONLxNYIdc0EBBOOQ1xyc+t9ag9ETSuBXFApx+Rod0uURfDYw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reset.min.css" integrity="sha512-Mjxkx+r7O/OLQeKeIBCQ2yspG1P5muhAtv/J+p2/aPnSenciZWm5Wlnt+NOUNA4SHbnBIE/R2ic0ZBiCXdQNUg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/theme/solarized.min.css" integrity="sha512-sUF1FAUpi9yPXCDOPsRwzh71zrCVkcT4SfwxBlQeHwMbH1aTGcSdI00GRLaH6iXRSBTazGH/u6sGQTc1tGqofg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- Theme used for syntax highlighted code -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/highlight/zenburn.min.css" integrity="sha512-JPxjD2t82edI35nXydY/erE9jVPpqxEJ++6nYEoZEpX2TRsmp2FpZuQqZa+wBCen5U16QZOkMadGXHCfp+tUdg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  </head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+				<section data-separator="---" data-markdown data-line-numbers>
+    			<textarea data-template>
+						## [Desarrollo de Aplicaciones con Ruby on Rails](#)
+						#### Profesor: Fernando Ciballero
+						---
+						## [Unidad 2: Autenticación con Devise](#)
+						## [Clase 7](#)
+						### Usuarios y Roles.
+						---
+						## [Usuarios y roles](#)
+
+						Aparte de la autenticación de usuario, en nuestra aplicación podemos autorizar el acceso al usuario segun el rol.
+
+						---
+						## [Limitar accesos y funcionalidades al rol del usuario](#)
+
+						En esta clase vamos a desarrollar un ejemplo que nos permite ingresar a ciertas partes de nuestra aplicación, no
+						solo dependiendo de si estamos logueados y si no tambien en función del rol de usuario.
+
+						---
+
+						Vamos a adicionar un campo booleano llamado **admin** a la tabla **users**:
+
+						```console
+						$ rails g migration addAdminColumnToUsers admin:boolean
+						```
+
+						```ruby
+						class AddAdminColumnToUsers < ActiveRecord::Migration[6.1]
+							def change
+								add_column :users, :admin, :boolean, default: false
+							end
+						end
+						```
+						---
+
+						Ahora creamos un usuario administrador y actualizamos el estado de los usuarios existentes
+
+						```console
+						User.create!(user_name: 'Admin', email: 'admin@gmail.com', password: 123456, admin: true)
+						```
+
+						```console
+						User.find_by(email: 'brucewillis@gmail.com').update(admin: false)
+						User.find_by(email: 'chucknorris@gmail.com').update(admin: false)
+						```
+						---
+
+						Con esto podemos conceder diferentes tipos de permisos según el rol del usuario.
+
+						Modificamos la vista **app/views/tv_shows/index.html.erb** para brindar un privilegio extra si el
+						usuario tiene el rol admin
+		
+						```erb
+							<% if (user_signed_in? && (current_user == tv_show.user)) %>
+								<td><%= link_to 'Edit', edit_tv_show_path(tv_show) %></td>
+								<td><%= link_to 'Destroy', tv_show, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+							<% elsif user_signed_in? && current_user.admin? %>
+								<td><%= link_to 'Destroy', tv_show, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+							<% end %>
+						```
+						---
+						En esta línea preguntamos si el usuario es admin:
+
+						```erb
+						current_user.admin?
+						```
+						---
+						Debemos tener en cuenta que por cada campo [booleano](#) de una tabla vamos a tener un método con [?](#) disponible
+						que nos devolvera un [true](#) o [false](#).
+
+						En este caso para nuestro campo [admin](#) vamos a tener un método [admin?](#)
+						---
+						Es importante destacar que existen gemas dedicadas exclusivamente a solucionar de forma eficiente los accesos dependiendo
+						el rol del usuario, como es el caso de [can can can](https://github.com/CanCanCommunity/cancancan) o [pundit](https://github.com/varvet/pundit)
+						---
+						## [Que aprendimos hoy?](#)
+						- Vimos como definir roles en la applicación.
+						- Vimos como restringir o privilegiar el acceso según el rol.
+						---
+						## [Bibliografía](#)
+						- [Roles con devise](https://learn.co/lessons/devise_roles_readme#:~:text=Roles%20are%20a%20way%20to,you%20are%20authorized%20to%20do.)
+				  </textarea>
+				</section>
+			</div>
+		</div>
+
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.js" integrity="sha512-fEgazVdZLNymIm9n+b2jtCrM4DQiqNTfLNUxbsGSFUJpYemf9A8GxgJ3VAfU/Lc6yZkDdEOdekBDZtG/mf73fQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/notes/notes.min.js" integrity="sha512-nLsCkPS/rdxRVOkxiKnld9KhQ24V/5kRChzSZ3MoFODykbWyBlQRsHLrbpN3J4LabYBnXIp1EnRIo3ifvyiQIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/markdown/markdown.min.js" integrity="sha512-QAU7Ux8iEB53koLKFCtddfFp0D1+uQWoX3ROnRDLeiE98XHOkMciaup0Spc014jQAuJaqz8VjUZdBqriheI4Lg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/highlight/highlight.min.js" integrity="sha512-U3fPDUX5bMrn1wnYqjaK44MFA9E6MKS+zPAg9WPAGF5XhReBeDj3FGaA831CjueG+YJxYA3WaO/m33kMIoOs/A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+			// More info about initialization & config:
+			// - https://revealjs.com/initialization/
+			// - https://revealjs.com/config/
+			Reveal.initialize({
+				hash: true,
+
+				// Learn about plugins: https://revealjs.com/plugins/
+				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
+			});
+		</script>
+	</body>
+</html>

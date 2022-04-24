@@ -1,0 +1,308 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>Introducción al Desarrollo de Aplicaciones con Ruby on Rails | AIEP</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.css" integrity="sha512-ITH3NSfntO7uI5n+BnxGNXpzDUoOsmAXuG37UDONLxNYIdc0EBBOOQ1xyc+t9ag9ETSuBXFApx+Rod0uURfDYw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reset.min.css" integrity="sha512-Mjxkx+r7O/OLQeKeIBCQ2yspG1P5muhAtv/J+p2/aPnSenciZWm5Wlnt+NOUNA4SHbnBIE/R2ic0ZBiCXdQNUg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/theme/solarized.min.css" integrity="sha512-sUF1FAUpi9yPXCDOPsRwzh71zrCVkcT4SfwxBlQeHwMbH1aTGcSdI00GRLaH6iXRSBTazGH/u6sGQTc1tGqofg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- Theme used for syntax highlighted code -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/highlight/zenburn.min.css" integrity="sha512-JPxjD2t82edI35nXydY/erE9jVPpqxEJ++6nYEoZEpX2TRsmp2FpZuQqZa+wBCen5U16QZOkMadGXHCfp+tUdg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  </head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+				<section data-separator="---" data-markdown data-line-numbers>
+    			<textarea data-template>
+						## [Desarrollo de Aplicaciones con Ruby on Rails](#)
+						#### Profesor: Fernando Ciballero
+						---
+						## [Unidad 2: Autenticación con Devise](#)
+						## [Clase 6](#)
+						### Personalizar datos de login.
+						---
+						#### [Personalizar las vistas de devise: Agregar campos al formulario; Strong params con devise](#)
+						
+						Devise nos brinda la posibilidad de agregar más campos de datos a la hora de registrarnos como usuarios.
+						
+						---
+						Habitualmente los formularios de registro de usuarios suelen tener varios campos de información:
+						
+						<img src="https://res.cloudinary.com/dhbkl5d9a/image/upload/v1653771343/modulo8/change_password_rq9kgy.png" alt="">
+
+						---
+						A lo largo de esta clase vamos un campo **username** como dato adicional del usuario registrado. 
+						
+						Como primer paso debemos generar una migración que va a agregar un campo user_name como dato adicional del usuario.
+
+						```console
+						$ rails g migration addUsernameColumnToUsers user_name:string
+						```
+
+						```ruby
+						class AddUsernameColumnToUsers < ActiveRecord::Migration[6.1]
+							def change
+								add_column :users, :user_name, :string
+							end
+						end
+						```
+						---
+
+						Ahora vamos a eliminar y volver a crear nuestra base de datos con la nueva estructura
+
+						```console
+						$ rails db:drop db:create db:migrate
+						```
+						---
+
+						Creamos dos usuarios dentro de **rails console**:
+
+						```console
+						User.create!([
+							{ user_name: 'Bruce willis', email: 'brucewillis@gmail.com', password: 123456},
+							{ user_name: 'Chuck Norris', email: 'chucknorris@gmail.com', password: 123456}
+							])	
+						```
+						---
+
+						Modificamos nuestro archivo **seed.rb** incluyendo a los nuevos usuarios:
+
+						```ruby
+						puts 'creando nacionalidades'
+
+						Nationality.destroy_all
+
+						Nationality.create([
+							{name: 'Estados Unidos', description: 'una description opcional', flag_img: 'https://flagcdn.com/32x24/us.png'},
+							{name: 'Finlandia', description: 'una description opcional', flag_img: 'https://flagcdn.com/32x24/fi.png'},
+							{name: 'Italia', description: 'una description opcional', flag_img: 'https://flagcdn.com/32x24/it.png'},
+							{name: 'Korea del sur', description: 'una description opcional', flag_img: 'https://flagcdn.com/32x24/kr.png'}
+						])
+
+						puts 'nacionalidades creadas!!!'
+
+						puts 'creando series de tv...'
+
+						TvShow.destroy_all
+
+						TvShow.create!(
+							[
+								{
+									name: 'game of thrones',
+									summary: 'Years after a rebellion spurred by a stolen bride to be and the blind ambitions of a mad King',
+									release_date: '2011-04-17',
+									rating: 7.8,
+									nationality: Nationality.find_by(name: 'Finlandia'),
+									user: User.find_by(email: 'brucewillis@gmail.com')
+								},
+								{
+									name: 'Squid Game',
+									summary: 'The series revolves around Seong Gi-hun, a divorced and indebted chauffeur, who is invited to play a series of children\'s games for a chance earning a large cash prize.' ,
+									release_date: '17-09-2021',
+									rating: 5.6,
+									nationality: Nationality.find_by(name: 'Korea del sur'),
+									user: User.find_by(email: 'chucknorris@gmail.com')
+								},
+								{
+									name: 'Angry Birds',
+									summary: 'Red, an angry bird, has been an outcast from Bird Island ever since he was a hatchling due to his short temper and his huge, jet-black eyebrows.',
+									release_date: '05-02-2016',
+									rating: 6.1,
+									nationality: Nationality.find_by(name: 'Estados Unidos'),
+									user: User.find_by(email: 'chucknorris@gmail.com')
+								},
+								{
+									name: 'Jaws 2',
+									summary: 'Chief Brody suspecting another great white shark is terrorizing the fictional sea side resort of Amity Island, following a series of incidents and disappearances, and his suspicions are eventually proven true.',
+									release_date: '16-06-1978',
+									rating: 9.8,
+									nationality: Nationality.find_by(name: 'Estados Unidos'),
+									user: User.find_by(email: 'chucknorris@gmail.com')
+								},
+								{
+									name: 'Agatha Christie\'s Crooked House',
+									summary: 'The granddaughter of late Greek-British business tycoon Aristide Leonides, Sophia Leonides, visits private investigator Charles Hayward in his office.',
+									release_date: '31-10-2017',
+									rating: 8.6,
+									nationality: Nationality.find_by(name: 'Italia'),
+									user: User.find_by(email: 'brucewillis@gmail.com')
+								},
+								{
+									name: 'Blade Runner: The Final Cut',
+									summary: 'A blade runner must pursue and terminate four replicants who stole a ship in space, and have returned to Earth to find their creator.',
+									release_date: '25-06-1982',
+									rating: 6.5,
+									nationality: Nationality.find_by(name: 'Estados Unidos'),
+									user: User.find_by(email: 'brucewillis@gmail.com')
+								}
+							]
+						)
+
+						puts 'finalizado!!!'
+						```
+						---
+
+						Luego vamos a **app/controller/application_controller.rb** y agregamos la siguiente configuración:
+
+						```ruby
+						class ApplicationController < ActionController::Base
+							before_action :configure_permitted_parameters, if: :devise_controller?
+
+							protected
+
+							def configure_permitted_parameters
+								devise_parameter_sanitizer.permit(:sign_up, keys: [:user_name])
+							end
+						end
+						```
+						---
+
+						En esta linea se agregan los parametros que vamos a adicionar al formulario de registro:
+						
+						```ruby
+						devise_parameter_sanitizer.permit(:sign_up, keys: [:user_name])
+						```
+
+						En este caso el campo **user_name
+						---
+						
+						Ahora agregamos el **textfield** en el formulario de registro y edición en **app/views/devise/registrations/new.html.erb** y **app/views/devise/registrations/edit.html.erb**
+
+						```
+						<!--app/views/devise/registrations/new.html.erb-->
+						<!--app/views/devise/registrations/edit.html.erb-->
+						<div class="field">
+							<%= f.label :user_name %><br />
+							<%= f.text_field :user_name, autofocus: true, autocomplete: "user_name" %>
+						</div>
+						```
+						---
+						## [Recuperación de las claves](#)
+
+						- Es habitual que un usuario olvide su contraseña para ingresar a su cuenta de usuario y necesite resetearla.
+						- Devise nos brinda un manera segura y facil de resolver esta situación
+						
+						---
+
+						La solución consiste en que devise nos provee de un mecanismo para poder resetear nuestro password
+						, mediante un link que podemos recibir en nuestra casilla de email.
+						
+
+						---
+						Como primer paso vamos a configurar un servidor local para simular que recibimos un email en nuestra casilla de correo real.
+						
+						Para ello utilizaremos una gema llamada [Mailcatcher](https://mailcatcher.me/)
+						
+						---
+						Procedemos a instalar la gema en nuestra computadora con el siguiente comando:
+
+						```console
+						$ sudo gem install mailcatcher -- --with-cflags="-Wno-error=implicit-function-declaration"
+						```
+
+						---
+						Luego añadimos esta configuración en **config/environments/development.rb**: 
+
+						```ruby
+						# config/environments/development.rb
+						config.action_mailer.delivery_method = :smtp
+						config.action_mailer.smtp_settings = { :address => '127.0.0.1', :port => 1025 }
+						config.action_mailer.raise_delivery_errors = false
+						```
+						
+						Una vez configurado todo, abrimos una pestaña adicional de nuestra terminal que va a dar inicio a
+						**Mailcatcher** mediante el comando:
+
+						```console
+						$ mailcatcher
+						```
+						---
+
+						Tal como se nos indica vamos a acceder a [http://127.0.0.1:1080](http://127.0.0.1:1080) que es la URL
+						donde va a funcionar nuestro servidor de correo.
+
+
+						```console
+						Starting MailCatcher v0.8.2
+						/Users/fernandociballero/.rbenv/versions/3.0.2/lib/ruby/gems/3.0.0/gems/digest-3.1.0/lib/digest.rb:20: warning: already initialized constant Digest::REQUIRE_MUTEX
+						/Users/fernandociballero/.rbenv/versions/3.0.2/lib/ruby/3.0.0/digest.rb:6: warning: previous definition of REQUIRE_MUTEX was here
+						==> smtp://127.0.0.1:1025
+						==> http://127.0.0.1:1080
+						*** MailCatcher runs as a daemon by default. Go to the web interface to quit.
+						```
+						---
+						Ahora levantamos nuestro servidor local con **rails server** y no vamos a dirigir a [http://localhost:3000/users/sign_in](http://localhost:3000/users/sign_in)
+						y nos vamos a encontrar un link con la leyenda **forgot your password?**
+						
+						<img src="https://res.cloudinary.com/dhbkl5d9a/image/upload/v1653772824/modulo8/forgot_password_mr04th.png" alt="">
+						
+						---
+
+						Una vez que hacemos click en el link vamos a acceder a este formulario donde vamos a cargar el email del usuario que olvidó su contraseña 
+
+						<img src="https://res.cloudinary.com/dhbkl5d9a/image/upload/v1653773999/modulo8/forgot_your_password_rccgml.png" alt="">
+
+						---
+
+						En [http://127.0.0.1:1080](http://127.0.0.1:1080) vamos a recibir un email con un link para resetear el password:
+
+						<img src="https://res.cloudinary.com/dhbkl5d9a/image/upload/v1653771344/modulo8/mailcatcher_pv1ohi.png" alt="">
+						
+						---
+
+						Una vez que hacemos vamos vamos a acceder al fomulario para crear el nuevo password:
+							
+						<img src="https://res.cloudinary.com/dhbkl5d9a/image/upload/v1653771343/modulo8/change_password_rq9kgy.png" alt="">
+
+						---
+
+						Si necesitamos editar el contenido del email de reset, vamos a encontrar el código correspondiente en: 
+						[app/views/devise/mailer/reset_password_instructions.html.erb](#)
+
+						```erb
+						<p>Hello <%= @resource.email %>!</p>
+
+<p>Someone has requested a link to change your password. You can do this through the link below.</p>
+
+<p><%= link_to 'Change my password', edit_password_url(@resource, reset_password_token: @token) %></p>
+
+<p>If you didn't request this, please ignore this email.</p>
+<p>Your password won't change until you access the link above and create a new one.</p>
+
+						```
+
+						En el caso de necesitar enviar un email de reset en producción (ejemplo Heroku) tenemos herramientas
+						como [Sendgrid](https://sendgrid.com/) entre las mas populares.  
+						---
+						## [Que aprendimos hoy?](#)
+						- Aprendimos a agregar campos adicionales a nuestro formulario de registro.
+						- Aprendimos como resetear un password con devise.
+						---
+						## [Bibliografía](#)
+						- [Agregar parametros al login](https://gist.github.com/withoutwax/46a05861aa4750384df971b641170407)
+						- [Reset password devise](https://stackoverflow.com/questions/8967405/devise-forgot-password-for-logged-in-user)
+				  </textarea>
+				</section>
+			</div>
+		</div>
+
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.js" integrity="sha512-fEgazVdZLNymIm9n+b2jtCrM4DQiqNTfLNUxbsGSFUJpYemf9A8GxgJ3VAfU/Lc6yZkDdEOdekBDZtG/mf73fQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/notes/notes.min.js" integrity="sha512-nLsCkPS/rdxRVOkxiKnld9KhQ24V/5kRChzSZ3MoFODykbWyBlQRsHLrbpN3J4LabYBnXIp1EnRIo3ifvyiQIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/markdown/markdown.min.js" integrity="sha512-QAU7Ux8iEB53koLKFCtddfFp0D1+uQWoX3ROnRDLeiE98XHOkMciaup0Spc014jQAuJaqz8VjUZdBqriheI4Lg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/highlight/highlight.min.js" integrity="sha512-U3fPDUX5bMrn1wnYqjaK44MFA9E6MKS+zPAg9WPAGF5XhReBeDj3FGaA831CjueG+YJxYA3WaO/m33kMIoOs/A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+			// More info about initialization & config:
+			// - https://revealjs.com/initialization/
+			// - https://revealjs.com/config/
+			Reveal.initialize({
+				hash: true,
+
+				// Learn about plugins: https://revealjs.com/plugins/
+				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
+			});
+		</script>
+	</body>
+</html>

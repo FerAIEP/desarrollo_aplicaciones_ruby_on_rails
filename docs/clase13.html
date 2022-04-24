@@ -1,0 +1,241 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>Introducción al Desarrollo de Aplicaciones con Ruby on Rails | AIEP</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.css" integrity="sha512-ITH3NSfntO7uI5n+BnxGNXpzDUoOsmAXuG37UDONLxNYIdc0EBBOOQ1xyc+t9ag9ETSuBXFApx+Rod0uURfDYw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reset.min.css" integrity="sha512-Mjxkx+r7O/OLQeKeIBCQ2yspG1P5muhAtv/J+p2/aPnSenciZWm5Wlnt+NOUNA4SHbnBIE/R2ic0ZBiCXdQNUg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/theme/solarized.min.css" integrity="sha512-sUF1FAUpi9yPXCDOPsRwzh71zrCVkcT4SfwxBlQeHwMbH1aTGcSdI00GRLaH6iXRSBTazGH/u6sGQTc1tGqofg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- Theme used for syntax highlighted code -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/highlight/zenburn.min.css" integrity="sha512-JPxjD2t82edI35nXydY/erE9jVPpqxEJ++6nYEoZEpX2TRsmp2FpZuQqZa+wBCen5U16QZOkMadGXHCfp+tUdg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  </head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+				<section data-separator="---" data-markdown data-line-numbers>
+    			<textarea data-template>
+						## [Desarrollo de Aplicaciones con Ruby on Rails](#)
+						#### Profesor: Fernando Ciballero
+						---
+						## [Unidad 5: Testing](#)
+						## [Clase 12](#)
+						### Entorno de testing.
+						---
+						## [Entorno de testing.](#)
+
+						Por defecto, cuando creamos una aplicación nueva en Rails, se nos instala un framework dentro del mismo
+						proyecto llamado [Minitest](#) que se va a encargar de gestionar la creación de carpetas, archivos y ejecución
+						de los test.
+
+						A su vez los test se van a organizar y clasificar según que tipos de pruebas ejecuten.
+
+						Entre los más usados podemos en mencionar:
+
+						- Test de modelos(Llamados tambien Test unitarios o Unit test )
+						- Test de controladores
+						- Test de rutas
+						- Test de integración(Integration tests)
+						- Test de sistem(System test)
+
+
+						## [Test unitarios en Minitest.](#)
+
+						Los Test unitarios o tambien llamados Unit tests son los test más [atómicos](#) a efectuar
+						ya que nos permitiran verificar cada uno de los atributos de un modelo con sus validaciones.
+
+						---
+
+						Vamos a desarrollar un pequeño ejemplo de test unitarios para el modelo [TvShow](#)
+
+						Supongamos que la historia de usuario nos describe que ninguno de los campos de el modelo
+						TvShow puede almacenar un valor nulo.
+
+						---
+
+						Acorde a esa historia de usuario vamos a crear los test correspondientes a todos los escenarios
+						posibles a la hora de ingresar datos a la aplicación:
+
+						```ruby
+						require "test_helper"
+
+						class TvShowTest < ActiveSupport::TestCase
+
+							test 'valid tv_show' do
+								tv_show = TvShow.new(
+									name:'Game of Thrones',
+									summary:'Years after a rebellion spurred by a stolen bride to be and the blind ambitions of a mad King',
+									release_date: '2011-04-17',
+									rating: 7.8)
+								assert tv_show.valid?
+							end
+
+							test 'invalid without name' do
+								tv_show = TvShow.new(
+									name: nil,
+									summary:'Years after a rebellion spurred by a stolen bride to be and the blind ambitions of a mad King',
+									release_date: '2011-04-17',
+									rating: 7.8)
+								assert_not tv_show.valid?
+							end
+
+							test 'invalid without summary' do
+								tv_show = TvShow.new(
+									name: 'Game of Thrones',
+									summary: nil,
+									release_date: '2011-04-17',
+									rating: 7.8)
+								assert_not tv_show.valid?
+							end
+
+							test 'invalid without release_date' do
+								tv_show = TvShow.new(
+									name:'Game of Thrones',
+									summary:'Years after a rebellion spurred by a stolen bride to be and the blind ambitions of a mad King',
+									release_date: nil,
+									rating: 7.8)
+								assert_not tv_show.valid?
+							end
+
+							test 'invalid without rating' do
+								tv_show = TvShow.new(
+									name:'Game of Thrones',
+									summary:'Years after a rebellion spurred by a stolen bride to be and the blind ambitions of a mad King',
+									release_date: '2011-04-17',
+									rating: nil)
+								assert_not tv_show.valid?
+							end
+						end
+						```
+
+						---
+
+						Si ejecutamos
+
+						```console
+						$ rails test -v models 
+						```
+						---
+						Comprobaremos que varios de los test han fallado ya que no estamos obteniendo el comportamiento esperado.
+
+						<img src="https://res.cloudinary.com/dhbkl5d9a/image/upload/v1654050568/modulo8/unit_test_fails_hj3kud.png" alt="" height="400">
+						---
+
+						Sabiendo de el error vamos a podes verificar que nos falta agregar las validaciones correspondientes en el modelo [TvShow](#)
+
+						Vamos a **app/models/tv_show.rb** y agregamos la validaciones:
+
+						```ruby
+						class TvShow < ApplicationRecord
+							validates :name, presence: true
+							validates :summary, presence: true
+							validates :release_date, presence: true
+							validates :rating, presence: true
+						end
+						```
+
+						---
+						Ahora ejecutamos nuevamente los test y comprobaremos que todas las pruebas pasan exitósamente:
+
+						```console
+						$ rails test -v models
+						```
+
+
+						---
+						## [Estructura de un test.](#)
+
+						Ahora vamos a revisar la estructura básica de un test
+						
+						```ruby
+						require "test_helper"
+
+						class TvShowTest < ActiveSupport::TestCase
+							test 'invalid without name' do
+								tv_show = TvShow.new(
+									name: nil,
+									summary:'Years after a rebellion spurred by a stolen bride to be and the blind ambitions of a mad King',
+									release_date: '2011-04-17',
+									rating: 7.8)
+								assert_not tv_show.valid?
+							end
+						end
+						```
+						---
+						Si revisamos en el arbol de directorios, veremos que un archivo de test tiene el siguiente formato
+
+						- **tv_show_test.rb** o visto de otra manera seria **[nombre_modelo]_test.rb**
+
+						---
+						Dentro del archivo nos encontraremos con un clase Ruby que hereda sus funcionalidades de la biblioteca 
+						[ActiveSupport::TestCase](#)
+
+						```ruby
+						class TvShowTest < ActiveSupport::TestCase
+						```
+						---
+						A su cada caso de uso a testear va a estar contenido dentro de un método especial llamado [test](#)
+						que tiene el siguiente formato:
+
+						```ruby
+						test [descripción del test] do
+							
+						end
+						```
+						---
+						y por último la creación de un objeto de la clase TvShow que va a servir de muestra:
+
+						```ruby
+						tv_show = TvShow.new(
+									name: nil,
+									summary:'Years after a rebellion spurred by a stolen bride to be and the blind ambitions of a mad King',
+									release_date: '2011-04-17',
+									rating: 7.8)
+						```
+						---
+						y la [afirmación](#) o [aserción(assert)](#) que va a expresar una determinada [expectativa](#) o [expectation](#)
+						, en este caso esperando que el objeto tv_show [NO](#) sea valido.
+
+						```ruby
+						assert_not tv_show.valid?
+						```
+						---
+						## [Métodos para validar.](#)
+
+						Minitest no incluye una serie de métodos o aserciones que nos permiten validar diferentes tipo de resultados en nuestros test:
+
+						[Listado de Aserciones de minitest](https://guides.rubyonrails.org/testing.html#available-assertions)
+						---
+						## [Que aprendimos hoy?](#)
+						- Aprendimos sobre el framework de testing Minitest.
+						- Aprendimos que es un test unitario (Unit test).
+						- Aprendimos sobre las diferentes partes de un test.
+						- Vimos una serie de métodos útiles para testear diferentes situaciones.
+						---
+						## [Bibliografía](#)
+						- [https://guides.rubyonrails.org/testing.html](https://guides.rubyonrails.org/testing.html)
+						- [Ref2](#)
+				  </textarea>
+				</section>
+			</div>
+		</div>
+
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.js" integrity="sha512-fEgazVdZLNymIm9n+b2jtCrM4DQiqNTfLNUxbsGSFUJpYemf9A8GxgJ3VAfU/Lc6yZkDdEOdekBDZtG/mf73fQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/notes/notes.min.js" integrity="sha512-nLsCkPS/rdxRVOkxiKnld9KhQ24V/5kRChzSZ3MoFODykbWyBlQRsHLrbpN3J4LabYBnXIp1EnRIo3ifvyiQIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/markdown/markdown.min.js" integrity="sha512-QAU7Ux8iEB53koLKFCtddfFp0D1+uQWoX3ROnRDLeiE98XHOkMciaup0Spc014jQAuJaqz8VjUZdBqriheI4Lg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/highlight/highlight.min.js" integrity="sha512-U3fPDUX5bMrn1wnYqjaK44MFA9E6MKS+zPAg9WPAGF5XhReBeDj3FGaA831CjueG+YJxYA3WaO/m33kMIoOs/A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+			// More info about initialization & config:
+			// - https://revealjs.com/initialization/
+			// - https://revealjs.com/config/
+			Reveal.initialize({
+				hash: true,
+
+				// Learn about plugins: https://revealjs.com/plugins/
+				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
+			});
+		</script>
+	</body>
+</html>

@@ -1,0 +1,272 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>Introducción al Desarrollo de Aplicaciones con Ruby on Rails | AIEP</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.css" integrity="sha512-ITH3NSfntO7uI5n+BnxGNXpzDUoOsmAXuG37UDONLxNYIdc0EBBOOQ1xyc+t9ag9ETSuBXFApx+Rod0uURfDYw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reset.min.css" integrity="sha512-Mjxkx+r7O/OLQeKeIBCQ2yspG1P5muhAtv/J+p2/aPnSenciZWm5Wlnt+NOUNA4SHbnBIE/R2ic0ZBiCXdQNUg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/theme/solarized.min.css" integrity="sha512-sUF1FAUpi9yPXCDOPsRwzh71zrCVkcT4SfwxBlQeHwMbH1aTGcSdI00GRLaH6iXRSBTazGH/u6sGQTc1tGqofg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- Theme used for syntax highlighted code -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/highlight/zenburn.min.css" integrity="sha512-JPxjD2t82edI35nXydY/erE9jVPpqxEJ++6nYEoZEpX2TRsmp2FpZuQqZa+wBCen5U16QZOkMadGXHCfp+tUdg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  </head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+				<section data-separator="---" data-markdown data-line-numbers>
+    			<textarea data-template>
+						## [Desarrollo de Aplicaciones con Ruby on Rails](#)
+						#### Profesor: Fernando Ciballero
+						---
+						## [Unidad 5: Testing](#)
+						## [Clase 12](#)
+						### Introducción a testing.
+						---
+						## [Testing: Introducción testing](#)
+						
+						- En el desarrollo de software, cualquier código debe pasar por una serie de pasos antes de que pueda publicarse.
+						
+						---
+
+						### [Este proceso consta de 6 pasos principales:](#) 
+						1. recopilar los requisitos del proyecto/aplicación.
+						2. analizar estos requisitos. 
+						3. diseñar el software. 
+						4. probar y depurar. 
+						5. implementar y mantener el proyecto.
+
+						---
+
+						Podría decirse que el paso más crítico del proceso es el paso de prueba,
+						ya que determinará la fiabilidad de nuestra aplicación. 
+
+						---
+						- El objetivo principal de las pruebas de software es eliminar errores en el código. 
+						- Sin embargo, hay beneficios adicionales que un proyecto puede obtener de un buen proceso de prueba. 
+						- Beneficios como mejorar el rendimiento, la experiencia del usuario y la seguridad del proyecto en general.
+
+						---
+
+						Si prestamos atención Rails nos generó de manera automática toda la estructura de archivos
+						para probar nuestra applicación cuando escribimos:
+
+						```console
+						$ rails generate model ...
+						```
+
+						```console
+						$ rails generate controller ...
+						```
+
+						```console
+						$ rails generate scaffold ...
+						```
+						
+						---
+
+						Dentro de nuestro proyecto tenemos generada una carpeta **/test**, que contiene una serie de
+						archivos y carpetas para organizar los diferentes tipos de tests.
+
+						---
+
+						<img src="https://res.cloudinary.com/dhbkl5d9a/image/upload/v1653959039/modulo8/test_folder_rfps0q.png" alt="">
+
+						---
+
+						Ahora vamos a crear un proyecto desde cero con una sola tabla para probar como funcionan los tests
+
+						```console
+						$ rails _6.1.5_ new test_tv_series --database=postgresql
+						```
+						---
+
+						Vamos a usar scaffold para generar rapidamente todos los recursos de CRUD que vamos a testear:
+
+						```console
+						$ rails g scaffold tv_show name:string summary:text release_date:datetime rating:float
+						```
+
+						```console
+						$ rails db:create db:migrate
+						```
+
+						---
+
+						Si navegamos hasta el archivo **test/models/tv_show_test.rb** vamos a ver que automáticamente
+						se creó un test básico:
+
+						```ruby
+						require "test_helper"
+
+						class TvShowTest < ActiveSupport::TestCase
+							# test "the truth" do
+							#		assert true
+							# end
+						end
+						```
+
+						Este test es tan solo un "hola mundo" para verificar que todo funciona correctamente
+
+						---
+
+						Asi que vamos a quitar los comentarios y vamos a verificar que todo funciona segun lo esperado:
+
+						
+						```ruby
+						require "test_helper"
+						
+						class TvShowTest < ActiveSupport::TestCase
+						 test "the truth" do
+							 assert true
+						 end
+						end
+						```
+						---
+
+						Con el comando **rails test -v [ruta-archivo]** podemos ejecutar ejecutar el test mostrado anteriormente:
+
+						```console
+						$ rails test -v test/models/tv_show_test.rb
+						```
+
+						---
+
+						Aqui tenemos un ejemplo de la salida que vamos a tener en donde se nuestra en color verde el test ejecutado, acompañado
+						del tiempo que demoró el test en ejecutarse.
+
+						<img src="https://res.cloudinary.com/dhbkl5d9a/image/upload/v1654034916/modulo8/test_the_truth_output_tnspgt.png" alt="">
+
+						---
+						## [Testing y cobertura](#)
+
+						- Existe otro concepto asociado a los test que es la cobertura de test:
+
+						- La cobertura de test de refiere a que porcentaje de nuestra aplicación está siendo verificada por los test creados.
+
+						---
+
+						En nuestro caso tenemos a disposición una gema llamada [Simplecov](https://github.com/simplecov-ruby/simplecov) que nos permite verificar esta cobertura de una manera
+						sencilla.
+
+						---
+
+						### [Pasos para la instalación de Simplecov](#)
+
+						Primeros agregamos la gema al Gemfile y ejecutamos el comando **bundle**
+
+						```ruby
+						gem 'simplecov', require: false, group: :test
+						```
+
+						```console
+						$ bundle
+						```
+						---
+
+						Cada vez que ejecutemos los test se nos va a crear una carpeta llamada [/coverage](#) que va a contener un informe sobre los porcentajes
+						de covertura de test de nuestra aplicación.
+
+						---
+
+						Agregamos esta carpeta [/coverage](#) al archivo [.gitignore](#) ya que no necesitamos subirla a Github:
+
+						```console
+						echo coverage >> .gitignore
+						```
+
+						---
+
+						Ahora ejecutamos el comando [rails test](#) para que se genere el informe de cobertura:
+
+						Luego podes abrir el informe en nuestro navegador mediante el siguiente comando:
+
+						Para los que tienen MacOS:
+
+						```console
+						$ open coverage/index.html
+						```
+						Para los que tienen Ubuntu:
+
+						```console
+						$ xdg-open coverage/index.html
+						```
+						---
+						En el navegador podran ver un archivo similar a este, en donde se indican los porcentajes de cobertura:
+
+						<img src="https://res.cloudinary.com/dhbkl5d9a/image/upload/v1654045758/modulo8/code_coverage_rlvp1i.png" alt="">
+
+						---
+						## [Historias de usuarios y relación con testing](#)
+
+						- Una aplicación se comienza a diseñar a partir de los [requerimientos del cliente](#)
+
+						- Cada uno de los [requerimientos del cliente](#) se va a fraccionar en pequeñas tareas.
+
+						- Cada una de estas tareas va a estar descrita en un pequeño texto llamado [historia de usuario](#) (user story).
+
+						---
+
+						La [historia de usuario](#) tiene la siguiente estructura:
+
+						- **Como:** [rol del usuario]
+						- **Quiero**: [objetivo]
+						- **Para:** [Beneficio]
+
+						---
+
+						Ejemplo:
+
+						- **Como:** usuario no administrador
+						- **Quiero:** tener un login
+						- **Para:** proteger mi información personal
+
+						---
+						
+						Por los general, de cada [historia de usuario](#) se desprenden los requirimientos de un test.
+						
+						---
+						
+						### [Video: "Historias de usuario contadas por testers"](#)
+
+						En el siguiente video se debate acerca de la implementación de los test a partir de las historias de usuario:
+
+						<iframe width="420" height="315"
+							src="https://www.youtube.com/embed/IvphiOxVIQg">
+						</iframe>
+						
+						---
+						## [Que aprendimos hoy?](#)
+						- Aprendimos sobre que son los test y cual es su función.
+						- Aprendimos como ejecutar un test en Rails.
+						- Vimos como verificar la cobertura de nuestros test.
+						- Aprendimos que los test pueden tomar como base las historias de usuarios.
+						---
+						## [Bibliografía](#)
+						- [https://towardsdatascience.com](https://towardsdatascience.com/a-brief-introduction-to-software-testing-38499dd4189)
+						- [https://guides.rubyonrails.org/testing.html](https://guides.rubyonrails.org/testing.html)
+						- [https://semaphoreci.com/community/tutorials/integration-testing-ruby-on-rails-with-minitest-and-capybara](https://semaphoreci.com/community/tutorials/integration-testing-ruby-on-rails-with-minitest-and-capybara)
+						- [https://www.guru99.com/test-coverage-in-software-testing.html](https://www.guru99.com/test-coverage-in-software-testing.html)
+					</textarea>
+				</section>
+			</div>
+		</div>
+
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.js" integrity="sha512-fEgazVdZLNymIm9n+b2jtCrM4DQiqNTfLNUxbsGSFUJpYemf9A8GxgJ3VAfU/Lc6yZkDdEOdekBDZtG/mf73fQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/notes/notes.min.js" integrity="sha512-nLsCkPS/rdxRVOkxiKnld9KhQ24V/5kRChzSZ3MoFODykbWyBlQRsHLrbpN3J4LabYBnXIp1EnRIo3ifvyiQIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/markdown/markdown.min.js" integrity="sha512-QAU7Ux8iEB53koLKFCtddfFp0D1+uQWoX3ROnRDLeiE98XHOkMciaup0Spc014jQAuJaqz8VjUZdBqriheI4Lg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/highlight/highlight.min.js" integrity="sha512-U3fPDUX5bMrn1wnYqjaK44MFA9E6MKS+zPAg9WPAGF5XhReBeDj3FGaA831CjueG+YJxYA3WaO/m33kMIoOs/A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+			// More info about initialization & config:
+			// - https://revealjs.com/initialization/
+			// - https://revealjs.com/config/
+			Reveal.initialize({
+				hash: true,
+
+				// Learn about plugins: https://revealjs.com/plugins/
+				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
+			});
+		</script>
+	</body>
+</html>

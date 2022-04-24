@@ -1,0 +1,443 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>Introducción al Desarrollo de Aplicaciones con Ruby on Rails | AIEP</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.css" integrity="sha512-ITH3NSfntO7uI5n+BnxGNXpzDUoOsmAXuG37UDONLxNYIdc0EBBOOQ1xyc+t9ag9ETSuBXFApx+Rod0uURfDYw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reset.min.css" integrity="sha512-Mjxkx+r7O/OLQeKeIBCQ2yspG1P5muhAtv/J+p2/aPnSenciZWm5Wlnt+NOUNA4SHbnBIE/R2ic0ZBiCXdQNUg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/theme/solarized.min.css" integrity="sha512-sUF1FAUpi9yPXCDOPsRwzh71zrCVkcT4SfwxBlQeHwMbH1aTGcSdI00GRLaH6iXRSBTazGH/u6sGQTc1tGqofg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- Theme used for syntax highlighted code -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/highlight/zenburn.min.css" integrity="sha512-JPxjD2t82edI35nXydY/erE9jVPpqxEJ++6nYEoZEpX2TRsmp2FpZuQqZa+wBCen5U16QZOkMadGXHCfp+tUdg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  </head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+				<section data-separator="---" data-markdown data-line-numbers>
+    			<textarea data-template>
+						## [Desarrollo de Aplicaciones con Ruby on Rails](#)
+						#### Profesor: Fernando Ciballero
+						---
+						## [Unidad 1: Relaciones 1 a N](#)
+						## [Clase 3](#)
+						### Agregando elementos al formulario.
+
+						- A nuestra base de datos le vamos a agregar una tabla que almacene información de diferentes paises.
+						- Esto nos permitirá definir el pais de origen de una serie.
+						---
+						## [Diagrama de relaciones.](#)
+
+						<img src="https://res.cloudinary.com/dhbkl5d9a/image/upload/v1653227961/modulo8/select_nationality_ij3cko.png" alt="">
+
+						---
+						Vamos a crear un modelo Nationality que va a estar asociado al modelo Tv_show:
+
+						```console
+						$ rails g model nationality name:string description:text flag_img:string
+						```
+						---
+						Creamos las asociaciones entre modelos
+
+						```ruby
+						class TvShow < ApplicationRecord
+						  belongs_to :nationality
+						# ...
+						end
+						```
+
+						```ruby
+						class Nationality < ApplicationRecord
+						  has_many :tv_shows, dependent: :destroy
+						end
+						```
+
+						---
+
+						Generamos una migración para agregar la Foreign Key a la tabla tv_shows
+
+						```console
+						$ rails g migration addNationalityReferenceToTvShows nationality:references
+						```
+
+						```console
+						$ rails db:migrate
+						```
+						---
+						Ahora modificamos el **seed.rb** para crear las nacionalidades:
+
+						```ruby
+						puts 'creando nacionalidades'
+
+						Nationality.destroy_all
+
+						Nationality.create([
+							{name: 'Estados Unidos', description: 'una description opcional', flag_img: 'https://flagcdn.com/32x24/us.png'},
+							{name: 'Finlandia', description: 'una description opcional', flag_img: 'https://flagcdn.com/32x24/fi.png'},
+							{name: 'Italia', description: 'una description opcional', flag_img: 'https://flagcdn.com/32x24/it.png'},
+							{name: 'Korea del sur', description: 'una description opcional', flag_img: 'https://flagcdn.com/32x24/kr.png'}
+						])
+
+						puts 'nacionalidades creadas!!!'
+
+						puts 'creando series de tv...'
+
+						TvShow.destroy_all
+
+						TvShow.create(
+							[
+								{
+									name: 'game of thrones',
+									summary: 'Years after a rebellion spurred by a stolen bride to be and the blind ambitions of a mad King',
+									release_date: '2011-04-17',
+									rating: 7.8,
+									nationality: Nationality.find_by(name: 'Finlandia')
+								},
+								{
+									name: 'Squid Game',
+									summary: 'The series revolves around Seong Gi-hun, a divorced and indebted chauffeur, who is invited to play a series of children\'s games for a chance earning a large cash prize.' ,
+									release_date: '17-09-2021',
+									rating: 5.6,
+									nationality: Nationality.find_by(name: 'Korea del sur')
+								},
+								{
+									name: 'Angry Birds',
+									summary: 'Red, an angry bird, has been an outcast from Bird Island ever since he was a hatchling due to his short temper and his huge, jet-black eyebrows.',
+									release_date: '05-02-2016',
+									rating: 6.1,
+									nationality: Nationality.find_by(name: 'Estados Unidos')
+								},
+								{
+									name: 'Jaws 2',
+									summary: 'Chief Brody suspecting another great white shark is terrorizing the fictional sea side resort of Amity Island, following a series of incidents and disappearances, and his suspicions are eventually proven true.',
+									release_date: '16-06-1978',
+									rating: 9.8,
+									nationality: Nationality.find_by(name: 'Estados Unidos')
+								},
+								{
+									name: 'Agatha Christie\'s Crooked House',
+									summary: 'The granddaughter of late Greek-British business tycoon Aristide Leonides, Sophia Leonides, visits private investigator Charles Hayward in his office.',
+									release_date: '31-10-2017',
+									rating: 8.6,
+									nationality: Nationality.find_by(name: 'Italia')
+								},
+								{
+									name: 'Blade Runner: The Final Cut',
+									summary: 'A blade runner must pursue and terminate four replicants who stole a ship in space, and have returned to Earth to find their creator.',
+									release_date: '25-06-1982',
+									rating: 6.5,
+									nationality: Nationality.find_by(name: 'Estados Unidos')
+								}
+							]
+						)
+
+						puts 'finalizado!!!'
+						```
+						---
+						Ejecutamos la carga de datos con el seed:
+
+						```console
+						$ rails db:seed
+						```
+
+						---
+
+						Podemos agregar en **app/views/tv_shows/index.html.erb**
+
+						```erb
+						<!--...-->
+						<tbody>
+							<% @tv_shows.each do |tv_show| %>
+								<tr>
+									<!--...-->
+									<td><%= image_tag(url_for(tv_show.nationality.flag_img))  %></td>
+									<!--...-->
+								</tr>
+							<% end %>
+						</tbody>
+						```
+						---
+						## [Asociando elementos con: Select.](#)
+
+						Podemos ahora agregar un campo para seleccionar la nacionalidad al ingresar una nueva serie.
+
+						---
+						Modifimos el formulario donde se ingresan las nuevas series/películas para que se pueda seleccionar Una
+						nacionalidad en **app/views/tv_shows/_form.html.erb**
+
+						```erb
+						<%= form_with(model: tv_show) do |form| %>
+							<!--...-->
+
+							<div class="field">
+								<%= collection_select(:tv_show, :nationality_id, Nationality.all, :id, :name, prompt: true) %>
+							</div>
+
+							<!--...-->
+						<% end %>
+						```
+						---
+						El helper [collection_select](#) nos genera una lista desplegable para seleccionear el país de origen.
+
+						---
+						Luego modificamos el TvShowController para que se pueda almacenar la nacionalidad de la película:
+
+						```ruby
+						class TvShowsController < ApplicationController
+							# ...
+							# POST /tv_shows or /tv_shows.json
+							def create
+								@tv_show = TvShow.new(tv_show_params)
+								@tv_show.nationality = Nationality.find(params[:tv_show][:nationality_id])
+								respond_to do |format|
+									if @tv_show.save
+										format.html { redirect_to tv_show_url(@tv_show), notice: "Tv show was successfully created." }
+										format.json { render :show, status: :created, location: @tv_show }
+									else
+										format.html { render :new, status: :unprocessable_entity }
+										format.json { render json: @tv_show.errors, status: :unprocessable_entity }
+									end
+								end
+							end
+
+							# ...
+
+							# Only allow a list of trusted parameters through.
+							def tv_show_params
+								params.require(:tv_show).permit(:name, :summary, :release_date, :rating, :nationality_id)
+							end
+						end
+						```
+						---
+						Tenemos la linea de código que nos permite insertar la nacionalidad a la serie/película
+
+						```ruby
+						@tv_show.nationality = Nationality.find(params[:tv_show][:nationality_id])
+						```
+
+						---
+						Finalmente modificamos **app/views/tv_shows/show.html.erb** para que muestre la nacionalidad:
+
+						```erb
+						<!--...-->
+						<p>
+							<strong>Nationality:</strong>
+							<%= image_tag(url_for(@tv_show.nationality.flag_img)) %>
+						</p>
+						<!--...-->
+						```
+						---
+						Existen otros helpers que nos generan elementos como checkbox o radio buttons entre otros elementos.
+						Para mas información, tenemos a disposición la [documentación](https://api.rubyonrails.org/classes/ActionView/Helpers/FormBuilder.html)
+
+						---
+						## [Rutas anidadas.](#)
+
+						En la clase anterior vimos algo asi en el archivo de rutas:
+
+						```ruby
+						Rails.application.routes.draw do
+							# ...
+							resources :tv_shows do
+								resources :episodes
+							end
+						end
+						```
+						---
+
+						```console
+						$ rails routes -g tv_shows
+						```
+
+						Si revisamos ahora las rutas generadas observaremos lo siguiente:
+
+						<img src="https://res.cloudinary.com/dhbkl5d9a/image/upload/v1653244193/modulo8/nested_routes_mqq7xt.png" alt="">
+
+						---
+
+						Las rutas de episodes necesitan de un tv_show como referencia para poder funcionar
+
+						Y en este caso vamos a tener un [params[:tv_show_id]](#) que nos va permitir buscar el tv_show asociado en la base de datos.
+						---
+						## [Formularios anidados.](#)
+
+						Existen casos que necesitamos ingresar datos en un formulario que corresponden a otro modelo.
+
+						Vamos a crear un modelo FilmLocation que va a almacenar las locaciones de filmación de la serie/pelicula
+
+						---
+						Como nos quedaría el esquema de la base de datos:
+
+						<img src="https://res.cloudinary.com/dhbkl5d9a/image/upload/v1653656223/modulo8/add_film_locations_lg0jza.png" alt="">
+						---
+						Primero generamos el modelo y la migración:
+
+						```console
+						$ rails g model film_location name:string indoor:boolean tv_show:references
+						```
+
+						```ruby
+						class CreateFilmLocations < ActiveRecord::Migration[6.1]
+							def change
+								create_table :film_locations do |t|
+									t.string :name
+									t.boolean :indoor, default: false
+									t.references :tv_show, null: false, foreign_key: true
+
+									t.timestamps
+								end
+							end
+						end
+						```
+						---
+						Ejecutamos la migración para crear la tabla correspondiente
+
+						```console
+						$ rails db:migrate
+						```
+
+						---
+						Al modelo TvShow le agregamos las relaciones correspondientes para aceptar atributos anidados:
+
+						```ruby
+						class TvShow < ApplicationRecord
+							has_many :film_locations, inverse_of: :tv_show
+							accepts_nested_attributes_for :film_locations
+							# ...
+						end
+						```
+
+						```ruby
+						class FilmLocation < ApplicationRecord
+							belongs_to :tv_show
+						end
+						```
+						---
+
+						Agregamos una sección al formulario para agregar las locaciones:
+
+						```erb
+						<fieldset style="width:270px">
+<legend>Film locations</legend>
+
+<ul class="field">
+	<%= form.fields_for :film_locations do |film_locations_form| %>
+		<li>
+			<%= film_locations_form.label :name %>
+			<%= film_locations_form.text_field :name %>
+
+			<%= film_locations_form.label :indoor %>
+			<%= film_locations_form.check_box :indoor %>
+		</li>
+	<% end %>
+</ul>
+</fieldset>
+						```
+						---
+						Luego modificamos TvShowsController:
+
+						```ruby
+						class TvShowsController < ApplicationController
+							# ...
+
+							def new
+								@tv_show = TvShow.new
+								2.times { @tv_show.film_locations.build }
+							end
+
+							#...
+
+							# POST /tv_shows or /tv_shows.json
+							def create
+								@tv_show = TvShow.new(tv_show_params)
+								@tv_show.nationality = Nationality.last || Nationality.find(params[:tv_show][:nationality_id])
+								respond_to do |format|
+									if @tv_show.save
+										format.html { redirect_to tv_show_url(@tv_show), notice: "Tv show was successfully created." }
+										format.json { render :show, status: :created, location: @tv_show }
+									else
+										format.html { render :new, status: :unprocessable_entity }
+										format.json { render json: @tv_show.errors, status: :unprocessable_entity }
+									end
+								end
+							end
+
+							# ...
+
+							def tv_show_params
+								params.require(:tv_show).permit(
+									:name,
+									:summary,
+									:release_date,
+									:rating,
+									:nationality_id,
+									film_locations_attributes: [:id, :name, :indoor]
+									)
+							end
+						end
+						```
+						---
+						Esta linea nos generará los campos para ingresar 2 locaciones:
+
+						```ruby
+						2.times { @tv_show.film_locations.build }
+						```
+						---
+						Y deberemos modificar el método **tv_show_params** para que nos guarde los attributos anidados
+						en la tabla **film_localtions**
+
+						```ruby
+						film_locations_attributes: [:id, :name, :indoor]
+						```
+
+						---
+						Por último podemos listar las locaciones al acceder a **app/views/tv_shows/show.html.erb**
+						agregando el siguiente código:
+
+						```erb
+						<!--...-->
+						<p><strong>Film locations:</strong></p>
+						<ul>
+							<% if @tv_show.film_locations %>
+								<% @tv_show.film_locations.each do |film_location|%>
+									<li><strong><%= film_location.name %>: </strong>
+									<%= film_location.indoor ? 'Indoor' : 'Outdoor' %></li>
+								<% end %>
+							<% else %>
+								<% 'No Film Locations Added!!!'%>
+							<% end %>
+						</ul>
+
+						<!--...-->
+						```
+						---
+						## [Que aprendimos hoy?](#)
+						- Aprendimos a agregar otros elemento a un formulario.
+						- Vimos la posibilidad de cargar datos de varios modelos en un mismo formulario.
+						---
+						## [Bibliografía](#)
+						- [https://guides.rubyonrails.org/form_helpers.html](https://guides.rubyonrails.org/form_helpers.html)
+						- [https://medium.com](https://medium.com/swlh/breaking-down-rubys-collection-select-for-html-forms-79c5a29f3c7a)
+				  </textarea>
+				</section>
+			</div>
+		</div>
+
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.js" integrity="sha512-fEgazVdZLNymIm9n+b2jtCrM4DQiqNTfLNUxbsGSFUJpYemf9A8GxgJ3VAfU/Lc6yZkDdEOdekBDZtG/mf73fQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/notes/notes.min.js" integrity="sha512-nLsCkPS/rdxRVOkxiKnld9KhQ24V/5kRChzSZ3MoFODykbWyBlQRsHLrbpN3J4LabYBnXIp1EnRIo3ifvyiQIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/markdown/markdown.min.js" integrity="sha512-QAU7Ux8iEB53koLKFCtddfFp0D1+uQWoX3ROnRDLeiE98XHOkMciaup0Spc014jQAuJaqz8VjUZdBqriheI4Lg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/highlight/highlight.min.js" integrity="sha512-U3fPDUX5bMrn1wnYqjaK44MFA9E6MKS+zPAg9WPAGF5XhReBeDj3FGaA831CjueG+YJxYA3WaO/m33kMIoOs/A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+			// More info about initialization & config:
+			// - https://revealjs.com/initialization/
+			// - https://revealjs.com/config/
+			Reveal.initialize({
+				hash: true,
+
+				// Learn about plugins: https://revealjs.com/plugins/
+				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
+			});
+		</script>
+	</body>
+</html>

@@ -1,0 +1,290 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>Introducción al Desarrollo de Aplicaciones con Ruby on Rails | AIEP</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.css" integrity="sha512-ITH3NSfntO7uI5n+BnxGNXpzDUoOsmAXuG37UDONLxNYIdc0EBBOOQ1xyc+t9ag9ETSuBXFApx+Rod0uURfDYw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reset.min.css" integrity="sha512-Mjxkx+r7O/OLQeKeIBCQ2yspG1P5muhAtv/J+p2/aPnSenciZWm5Wlnt+NOUNA4SHbnBIE/R2ic0ZBiCXdQNUg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/theme/solarized.min.css" integrity="sha512-sUF1FAUpi9yPXCDOPsRwzh71zrCVkcT4SfwxBlQeHwMbH1aTGcSdI00GRLaH6iXRSBTazGH/u6sGQTc1tGqofg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- Theme used for syntax highlighted code -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/highlight/zenburn.min.css" integrity="sha512-JPxjD2t82edI35nXydY/erE9jVPpqxEJ++6nYEoZEpX2TRsmp2FpZuQqZa+wBCen5U16QZOkMadGXHCfp+tUdg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  </head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+				<section data-separator="---" data-markdown data-line-numbers>
+    			<textarea data-template>
+						## [Desarrollo de Aplicaciones con Ruby on Rails](#)
+						#### Profesor: Fernando Ciballero
+					
+						---
+						## [Unidad 5: Testing](#)
+						## [Clase 14](#)
+						### Fixtures y test funcionales.
+
+						---
+						## [Fixtures y YAML](#)
+						
+						- Los fixtures son una forma de organizar los datos con los que desea probar; en resumen, datos de muestra.
+
+						- El formato elegido para los fixtures es YAML.
+
+						- Cada fixture YAML (es decir, registro) recibe un nombre y va seguido de una lista de pares clave/valor en el formato "clave: valor". 
+						
+						- Los registros están separados por una línea en blanco.
+						
+						[https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html](https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html)
+						---
+
+						Estos archivos se encuentra dentro de [test/fixtures](#) y podemos requerirlos desde cualquier test
+
+						Ejemplo de un fixture:
+						
+						```yaml
+						rubyonrails:
+						id: 1
+						name: Ruby on Rails
+						url: http://www.rubyonrails.org
+
+						google:
+							id: 2
+							name: Google
+							url: http://www.google.com
+						```
+						
+						---
+
+						Por ejemplo para nuestra aplicación podemos crear un fixture usando los datos de nuestro de tv_shows:
+
+						```yaml
+						game_of_thrones:
+							name: 'Game of Thrones'
+							summary: 'Years after a rebellion spurred by a stolen bride to be and the blind ambitions of a mad King'
+							release_date: '2011-04-17'
+							rating: 7.8
+
+						squid_game:
+							name: 'Squid Game'
+							summary: 'The series revolves around Seong Gi-hun, a divorced and indebted chauffeur, who is invited to play a series of childrens games for a chance earning a large cash prize.'
+							release_date: '17-09-2021'
+							rating: 5.6
+
+						angry_birds:
+							name: 'Angry Birds'
+							summary: 'Red, an angry bird, has been an outcast from Bird Island ever since he was a hatchling due to his short temper and his huge, jet-black eyebrows.'
+							release_date: '05-02-2016'
+							rating: 5.6
+
+						jaws_2:
+							name: 'Jaws 2'
+							summary: 'Chief Brody suspecting another great white shark is terrorizing the fictional sea side resort of Amity Island, following a series of incidents and disappearances, and his suspicions are eventually proven true.'
+							release_date: '16-06-1978'
+							rating: 9.8
+
+						crooked_house:
+							name: 'Agatha Christies Crooked House'
+							summary: 'The granddaughter of late Greek-British business tycoon Aristide Leonides, Sophia Leonides, visits private investigator Charles Hayward in his office.'
+							release_date: '31-10-2017'
+							rating: 8.6
+
+						blade_runner:
+							name: 'Blade Runner: The Final Cut'
+							summary: 'A blade runner must pursue and terminate four replicants who stole a ship in space, and have returned to Earth to find their creator.'
+							release_date: '25-06-1982'
+							rating: 6.5
+						```
+
+						Con esto estamos cumpliendo el principio [DRY](#)(Don't repeat yourself)
+						
+						---
+
+						Ahora podemos modificar nuestros test unitarios de TvShow, usando en este caso los fixtures:
+
+						```ruby
+						require "test_helper"
+
+
+						class TvShowTest < ActiveSupport::TestCase
+							setup do
+								@tv_show = tv_shows(:game_of_thrones)
+							end
+
+							test 'valid tv_show' do
+								assert @tv_show.valid?
+							end
+
+							test 'invalid without name' do
+								@tv_show.name = nil
+								assert_not @tv_show.valid?
+							end
+
+							test 'invalid without summary' do
+								@tv_show.summary = nil
+							assert_not @tv_show.valid?
+							end
+
+							test 'invalid without release_date' do
+								@tv_show.release_date = nil
+								assert_not @tv_show.valid?
+							end
+
+							test 'invalid without rating' do
+								@tv_show.rating = nil
+								assert_not @tv_show.valid?
+							end
+						end
+						```
+
+						---
+
+						Podemos verificar que el tamaño de código se redujo notablemente y se evita el código redundante.
+						
+						---
+						## [Test funcionales con Minitest](#)
+
+						- En Rails, Testear las diversas acciones de un controlador es una forma de escribir pruebas funcionales. 
+						
+						- Debemos considerar que los controladores manejan las solicitudes web entrantes a su aplicación y eventualmente responden con una vista renderizada. 
+						
+						- Al escribir pruebas funcionales, se está probando cómo las acciones manejan las solicitudes y el resultado o la respuesta esperados, en algunos casos una vista HTML.
+
+						
+						---
+						### [Qué incluir en los Test Funcionales?](#)
+						Debe probar cosas como:
+
+						- ¿Fue exitosa la solicitud web?
+						- ¿El usuario fue redirigido a la página correcta?
+						- ¿Se autenticó correctamente el usuario?
+						- ¿Se mostró el mensaje apropiado al usuario en la vista?
+						- ¿Se mostró la información correcta en la respuesta?
+						
+						---
+
+						Vamos a ver un ejemplo de un test funcional:
+
+						En este caso si nos dirijimos a [test/controllers/tv_shows_controller_test.rb](#) vamos a encontrar un test funcional creado
+						, ya que el generador de Scaffold nos lo crear automáticamente:
+
+						```ruby
+						require "test_helper"
+
+						class TvShowsControllerTest < ActionDispatch::IntegrationTest
+							setup do
+								@tv_show = tv_shows(:game_of_thrones)
+							end
+
+							test "should get index" do
+								get tv_shows_url
+								assert_response :success
+							end
+
+							test "should get new" do
+								get new_tv_show_url
+								assert_response :success
+							end
+
+							test "should create tv_show" do
+								assert_difference('TvShow.count') do
+									post tv_shows_url, params: { tv_show: { name: @tv_show.name, rating: @tv_show.rating, release_date: @tv_show.release_date, summary: @tv_show.summary } }
+								end
+
+								assert_redirected_to tv_show_url(TvShow.last)
+							end
+
+							test "should show tv_show" do
+								get tv_show_url(@tv_show)
+								assert_response :success
+							end
+
+							test "should get edit" do
+								get edit_tv_show_url(@tv_show)
+								assert_response :success
+							end
+
+							test "should update tv_show" do
+								patch tv_show_url(@tv_show), params: { tv_show: { name: @tv_show.name, rating: @tv_show.rating, release_date: @tv_show.release_date, summary: @tv_show.summary } }
+								assert_redirected_to tv_show_url(@tv_show)
+							end
+
+							test "should destroy tv_show" do
+								assert_difference('TvShow.count', -1) do
+									delete tv_show_url(@tv_show)
+								end
+
+								assert_redirected_to tv_shows_url
+							end
+						end
+						```
+						---
+
+						A diferencia de los tests unitarios, los test funcionales heredan de [ActionDispatch::IntegrationTest](#)
+
+						```ruby
+						class TvShowsControllerTest < ActionDispatch::IntegrationTest
+						```
+						---
+
+						En esta linea por ejemplo le indicamos al test que vaya a la ruta [get tv_shows_url](#)
+
+						```ruby
+						get tv_shows_url
+						```
+
+						Esta línea nos dice que se espera un resutado exitoso al finalizar el test
+
+						```ruby
+						assert_response :success
+						```
+
+						---
+
+						Tambien podemos testear la creación de un tv_show enviando parámetros y comprobando que fueron creados en la base de datos:
+
+						```ruby
+						test "should create tv_show" do
+								assert_difference('TvShow.count') do
+									post tv_shows_url, params: { tv_show: { name: @tv_show.name, rating: @tv_show.rating, release_date: @tv_show.release_date, summary: @tv_show.summary } }
+								end
+
+							assert_redirected_to tv_show_url(TvShow.last)
+						end
+						```
+
+						---
+
+						Podemos encontrar otros tipos de test que se encuentran detallados en la [Guia de Testing de rails](https://guides.rubyonrails.org/testing.html#functional-tests-for-your-controllers)
+						---
+						## [Que aprendimos hoy?](#)
+						- Aprendimos sobre los fixtures y su utilidad.
+						- Aprendimos sobre los test funcionales.
+						---
+						## [Bibliografía](#)
+						- [https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html](https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html)
+						- [https://guides.rubyonrails.org/testing.html#functional-tests-for-your-controllers](https://guides.rubyonrails.org/testing.html#functional-tests-for-your-controllers)
+						- [Test funcionales](https://guides.rubyonrails.org/testing.html#functional-tests-for-your-controllers)
+				  </textarea>
+				</section>
+			</div>
+		</div>
+
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.js" integrity="sha512-fEgazVdZLNymIm9n+b2jtCrM4DQiqNTfLNUxbsGSFUJpYemf9A8GxgJ3VAfU/Lc6yZkDdEOdekBDZtG/mf73fQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/notes/notes.min.js" integrity="sha512-nLsCkPS/rdxRVOkxiKnld9KhQ24V/5kRChzSZ3MoFODykbWyBlQRsHLrbpN3J4LabYBnXIp1EnRIo3ifvyiQIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/markdown/markdown.min.js" integrity="sha512-QAU7Ux8iEB53koLKFCtddfFp0D1+uQWoX3ROnRDLeiE98XHOkMciaup0Spc014jQAuJaqz8VjUZdBqriheI4Lg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/highlight/highlight.min.js" integrity="sha512-U3fPDUX5bMrn1wnYqjaK44MFA9E6MKS+zPAg9WPAGF5XhReBeDj3FGaA831CjueG+YJxYA3WaO/m33kMIoOs/A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+			// More info about initialization & config:
+			// - https://revealjs.com/initialization/
+			// - https://revealjs.com/config/
+			Reveal.initialize({
+				hash: true,
+
+				// Learn about plugins: https://revealjs.com/plugins/
+				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
+			});
+		</script>
+	</body>
+</html>

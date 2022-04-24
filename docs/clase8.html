@@ -1,0 +1,287 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>Introducción al Desarrollo de Aplicaciones con Ruby on Rails | AIEP</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.css" integrity="sha512-ITH3NSfntO7uI5n+BnxGNXpzDUoOsmAXuG37UDONLxNYIdc0EBBOOQ1xyc+t9ag9ETSuBXFApx+Rod0uURfDYw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reset.min.css" integrity="sha512-Mjxkx+r7O/OLQeKeIBCQ2yspG1P5muhAtv/J+p2/aPnSenciZWm5Wlnt+NOUNA4SHbnBIE/R2ic0ZBiCXdQNUg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/theme/solarized.min.css" integrity="sha512-sUF1FAUpi9yPXCDOPsRwzh71zrCVkcT4SfwxBlQeHwMbH1aTGcSdI00GRLaH6iXRSBTazGH/u6sGQTc1tGqofg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- Theme used for syntax highlighted code -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/highlight/zenburn.min.css" integrity="sha512-JPxjD2t82edI35nXydY/erE9jVPpqxEJ++6nYEoZEpX2TRsmp2FpZuQqZa+wBCen5U16QZOkMadGXHCfp+tUdg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  </head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+				<section data-separator="---" data-markdown data-line-numbers>
+    			<textarea data-template>
+						## [Desarrollo de Aplicaciones con Ruby on Rails](#)
+						#### Profesor: Fernando Ciballero
+						---
+						## [Unidad 1: Modelos con relaciones N a N](#)
+						## [Clase 8](#)
+						### Introducción a las relaciones N a N en Rails.
+						---
+						## [Modelos con relaciones N a N](#)
+						
+						Hasta ahora hemos vimos diferentes alternativas a la hora de implementar una relación 1 a N.
+
+						<img src="https://res.cloudinary.com/dhbkl5d9a/image/upload/v1653226544/modulo8/1_a_N_tables_zm0wcz.png" alt="">
+
+						---
+						En este caso vamos a contemplar el caso de tener una relación de tablas N a N
+						
+						<img src="https://res.cloudinary.com/dhbkl5d9a/image/upload/v1653792346/modulo8/many_to_many_d2ip0c.png" alt="">
+						
+						---
+						## [has_and_belongs_to_many](#)
+						
+						- Una asociación has_and_belongs_to_many crea una conexión directa de muchos a muchos con otro modelo, 
+						[sin ningún modelo intermedio](#).
+
+						- Esta asociación indica que cada instancia del modelo declarante se refiere a cero o más instancias de otro modelo.
+
+						---
+
+						En nuestro ejemplo estamos relacionando [actors](#) y [tv_shows](#), en donde [1](#) tv_show puede tener de [uno a muchos actores](#)
+						y un [actor](#) puede actuar en [uno o muchos tv_shows](#).
+
+						---
+						## [Implementación de relaciones N a N con dos modelos](#)
+
+						Vamos a desarrollar ahora la implementación en rails de una relación [has and belongs to many] entre el modelo **Actor**
+						y el modelo **TvShow**
+
+						---
+
+						Primero creamos el modelo Actor con los campos correspondientes:
+
+						```console
+						$ rails g model actor first_name:string last_name:string age:integer
+						```
+
+						```ruby
+						class CreateActors < ActiveRecord::Migration[6.1]
+							def change
+								create_table :actors do |t|
+									t.string :first_name
+									t.string :last_name
+									t.integer :age
+
+									t.timestamps
+								end
+							end
+						end
+						```
+						---
+						Luego creamos la "relación" [HABTM](#) entre los dos modelos:
+
+						```console
+						$ rails g migration createActorsAndTvShows
+						```
+
+						---
+						En este caso la migración va a generar un tabla intermedia que va a relacionar [actors](#) y [tv_shows](#)
+						
+						```ruby
+						class CreateActorsAndTvShows < ActiveRecord::Migration[6.1]
+							def change
+								create_table :actors_tv_shows, id: false do |t|
+									t.belongs_to :actor
+									t.belongs_to :tv_show
+								end
+							end
+						end
+						```
+
+						---
+
+						Ejecutamos la migración creada para generar la nueva tabla actors en la base de datos:
+
+						```console
+						$ rails db:migrate
+						```
+
+						---
+
+						Ahora agregamos las asociaciones en los modelos:
+
+						```ruby
+						class TvShow < ApplicationRecord
+							# ...
+							has_and_belongs_to_many :actors
+							# ...
+						end
+						```
+
+						```ruby
+						class Actor < ApplicationRecord
+							has_and_belongs_to_many :tv_shows
+						end
+						```
+						---
+
+						En este punto podemos agregar actores mediante la rails [console](#)
+
+						```console
+						Actor.create!([
+							{ first_name: 'Lee', last_name: 'Jung-jae', age: 43 },
+							{ first_name: 'Park Hae-soo', last_name: 'Hae-soo', age: 50 }
+						])
+						```
+
+						Y podemos asociar los actores creados a un tv_show
+
+						```console
+						tv_show = TvShow.find_by(name: 'Squid Game')
+						tv_show.actors << Actor.first
+						tv_show.actors << Actor.second
+						```
+
+						---
+
+						Ahora vamos a ver un ejemplo de una relación muchos a muchos añadiendo actores mediante un formulario.
+
+						---
+
+						Primero vamos a crear nuevas rutas anidadas a tv_shows, en este caso solo una ruta para acceder al formulario:
+						```ruby
+						Rails.application.routes.draw do
+							# ...
+							resources :tv_shows do
+								# ...
+								resources :actors, only: [:new, :create]
+							end
+							# ...
+						end
+						```
+
+						---
+
+						Si revisamos las rutas creadas podemos ver 2 rutas nuevas para crear actores:
+						
+						```console
+						   Prefix         Verb           URI Pattern                                Controller#Action
+						tv_show_actors    POST    /tv_shows/:tv_show_id/actors(.:format)               actors#create
+new_tv_show_actor GET     /tv_shows/:tv_show_id/actors/new(.:format)           actors#new
+
+						```
+
+						---
+
+						Ahora crearemos el controlador [ActorsController](#) con las acciones [new](#) y [create](#)
+
+						```console
+						$ rails g controller actors new create
+						```
+
+						---
+
+						Dentro de ActorsController completamos las acciones con el código correspondiente
+						```ruby
+						# app/controllers/actors_controller.rb
+						class ActorsController < ApplicationController
+							def new
+								@tv_show = TvShow.find(params[:tv_show_id])
+								@actor = @tv_show.actors.build
+							end
+
+							def create
+								@tv_show = TvShow.find(params[:tv_show_id])
+								@actor = @tv_show.actors.create!(actor_params)
+								redirect_to @tv_show
+							end
+
+							private
+
+							def actor_params
+								params.require(:actor).permit(:first_name, :last_name, :age)
+							end
+						end
+						```
+
+						---
+
+						Luego creamos el formulario dentro de [app/views/actors/new.html.erb](#):
+
+						```erb
+						<!--app/views/actors/new.html.erb-->
+						<h1>Add actors to tv_show</h1>
+
+						<%= form_with(model:[@tv_show, @actor]) do |form| %>
+							<div class="field">
+								<%= form.label :first_name %>
+								<%= form.text_field :first_name %>
+							</div>
+
+							<div class="field">
+								<%= form.label :last_name %>
+								<%= form.text_field :last_name %>
+							</div>
+
+							<div class="field">
+								<%= form.label :age %>
+								<%= form.number_field :age %>
+							</div>
+							<br>
+							<div class="field">
+								<%= form.submit %>
+							</div>
+						<% end %>
+						```
+						---
+
+						Finalmente agregamos este código dentro de [app/views/tv_shows/show.html.erb](#) para poder acceder al formulario:
+
+						```erb
+						<!--app/views/tv_shows/show.html.erb-->
+						<p><strong>Actors:</strong></p>
+						<ul>
+							<% if @tv_show.actors %>
+								<% @tv_show.actors.each do |actor|%>
+									<li><strong><%= actor.id %>: </strong><%= "#{actor.first_name} #{actor.last_name}" %></li>
+								<% end %>
+							<% else %>
+								<% 'No Actors Added!!!'%>
+							<% end %>
+						</ul>
+
+
+						<!--...-->
+
+						<%= link_to 'Add actors', new_tv_show_actor_path(@tv_show) %>
+						```			
+						---
+						## [Que aprendimos hoy?](#)
+						- Aprendimos como crear relaciones muchos a muchos en Rails.
+						- Vimos como funciona la asociación con dos modelos (has_and_belongs_to_many).
+						- Vimos un ejemplo práctico de cargar datos mediante un formulario.
+
+						---
+						## [Bibliografía](#)
+						- [Active record associations](https://guides.rubyonrails.org/association_basics.html)
+						- [Formularios hbtm](https://stackoverflow.com/questions/13506735/rails-has-many-through-nested-form)
+				  </textarea>
+				</section>
+			</div>
+		</div>
+
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.js" integrity="sha512-fEgazVdZLNymIm9n+b2jtCrM4DQiqNTfLNUxbsGSFUJpYemf9A8GxgJ3VAfU/Lc6yZkDdEOdekBDZtG/mf73fQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/notes/notes.min.js" integrity="sha512-nLsCkPS/rdxRVOkxiKnld9KhQ24V/5kRChzSZ3MoFODykbWyBlQRsHLrbpN3J4LabYBnXIp1EnRIo3ifvyiQIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/markdown/markdown.min.js" integrity="sha512-QAU7Ux8iEB53koLKFCtddfFp0D1+uQWoX3ROnRDLeiE98XHOkMciaup0Spc014jQAuJaqz8VjUZdBqriheI4Lg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/highlight/highlight.min.js" integrity="sha512-U3fPDUX5bMrn1wnYqjaK44MFA9E6MKS+zPAg9WPAGF5XhReBeDj3FGaA831CjueG+YJxYA3WaO/m33kMIoOs/A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+			// More info about initialization & config:
+			// - https://revealjs.com/initialization/
+			// - https://revealjs.com/config/
+			Reveal.initialize({
+				hash: true,
+
+				// Learn about plugins: https://revealjs.com/plugins/
+				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
+			});
+		</script>
+	</body>
+</html>

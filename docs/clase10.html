@@ -1,0 +1,225 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>Introducción al Desarrollo de Aplicaciones con Ruby on Rails | AIEP</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.css" integrity="sha512-ITH3NSfntO7uI5n+BnxGNXpzDUoOsmAXuG37UDONLxNYIdc0EBBOOQ1xyc+t9ag9ETSuBXFApx+Rod0uURfDYw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reset.min.css" integrity="sha512-Mjxkx+r7O/OLQeKeIBCQ2yspG1P5muhAtv/J+p2/aPnSenciZWm5Wlnt+NOUNA4SHbnBIE/R2ic0ZBiCXdQNUg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/theme/solarized.min.css" integrity="sha512-sUF1FAUpi9yPXCDOPsRwzh71zrCVkcT4SfwxBlQeHwMbH1aTGcSdI00GRLaH6iXRSBTazGH/u6sGQTc1tGqofg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- Theme used for syntax highlighted code -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/highlight/zenburn.min.css" integrity="sha512-JPxjD2t82edI35nXydY/erE9jVPpqxEJ++6nYEoZEpX2TRsmp2FpZuQqZa+wBCen5U16QZOkMadGXHCfp+tUdg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  </head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+				<section data-separator="---" data-markdown data-line-numbers>
+    			<textarea data-template>
+						## [Desarrollo de Aplicaciones con Ruby on Rails](#)
+						#### Profesor: Fernando Ciballero
+						---
+						## [Unidad 4: Subida de archivos con Active Storage y Cloudinary](#)
+						## [Clase 10](#)
+						### Introducción.
+						---
+						## [Subida de archivos con Active Storage](#)
+
+						- Active Storage facilita la carga de archivos en un servicio de almacenamiento en la nube como Amazon S3, 
+						Google Cloud Storage o Microsoft Azure Storage y adjunta esos archivos a los objetos de Active Record. 
+						
+						---
+						- Se puede implementar como un servicio local en la etapa de desarrollo y prueba de la aplicación.
+						---
+						- Con Active Storage, una aplicación puede almacenar imágenes, archivos PDF y videos.
+
+						---
+						## [Implementación de Active Storage](#)
+
+						Ahora veremos un ejemplo que como implementar Active Storage en nuestra aplicación Ruby on Rails.
+
+						```console
+						$ rails active_storage:install
+						```
+
+						---
+						Esta migración se va a crear automáticamente en nuestro proyecto:
+
+						```ruby
+						# This migration comes from active_storage (originally 20170806125915)
+						class CreateActiveStorageTables < ActiveRecord::Migration[5.2]
+							def change
+								create_table :active_storage_blobs do |t|
+									t.string   :key,          null: false
+									t.string   :filename,     null: false
+									t.string   :content_type
+									t.text     :metadata
+									t.string   :service_name, null: false
+									t.bigint   :byte_size,    null: false
+									t.string   :checksum,     null: false
+									t.datetime :created_at,   null: false
+
+									t.index [ :key ], unique: true
+								end
+
+								create_table :active_storage_attachments do |t|
+									t.string     :name,     null: false
+									t.references :record,   null: false, polymorphic: true, index: false
+									t.references :blob,     null: false
+
+									t.datetime :created_at, null: false
+
+									t.index [ :record_type, :record_id, :name, :blob_id ], name: "index_active_storage_attachments_uniqueness", unique: true
+									t.foreign_key :active_storage_blobs, column: :blob_id
+								end
+
+								create_table :active_storage_variant_records do |t|
+									t.belongs_to :blob, null: false, index: false
+									t.string :variation_digest, null: false
+
+									t.index %i[ blob_id variation_digest ], name: "index_active_storage_variant_records_uniqueness", unique: true
+									t.foreign_key :active_storage_blobs, column: :blob_id
+								end
+							end
+						end
+						```
+						---
+
+						Luego ejecutamos la migración para crear las tablas:
+
+						```console
+						$ rails db:migrate
+						```
+						---
+						## [Relaciones polimórficas](#)
+
+						Lo que es particularmente interesante de esta tabla de unión es que es un tipo especial de tabla de unión: una tabla de unión polimórfica .
+
+						---
+						Estructura de las tablas y sus relaciones: 
+
+						<img src="https://pragmaticstudio.com/images/tutorials/using-active-storage-in-rails/polymorphic.jpg" alt="">
+
+						---
+						Volviendo a la migración, nos podemos encontrar con esta linea:
+
+						```ruby
+						t.references :record,   null: false, polymorphic: true, index: false
+						```
+
+						Esto significa que la referencia record puede apunta a cualquier modelo de ActiveRecord.
+
+						---
+
+						#### [Descripción de las tablas:](#)
+
+						- **active_storage_blobs**: Almacena todos los detalles de los archivos cargados, como su [filename](#), 
+						[content_type](#), [metadata](#) y otra información similar. Y key es un valor codificado que apunta al archivo 
+						en Active Storage.
+
+
+						- **active_storage_attachments**: es la tabla intermedia entre el archivo almacenado(llamado blob) y el registro
+						con el cual está relacionado.
+						
+						---
+
+						Agregando la línea has_one_attached :image a los modelos podemos habilitar el almacenamiento de archivos.
+
+						```ruby
+						has_one_attached :image
+						```
+
+						```ruby
+						class Actor < ApplicationRecord
+							has_one_attached :image
+						end
+						```
+
+						```ruby
+						class User < ApplicationRecord
+							has_one_attached :image
+						end
+						```
+						---
+						## [Formularios multipart](#)
+
+						Con unas simples modificaciones podemos agregar un campo para subir archivos en nuestro formulario:
+
+						```erb
+						<!--app/views/actors/new.html.erb-->
+						<h1>Add actors to tv_show</h1>
+
+						<%= form_with(model:[@tv_show, @actor]) do |form| %>
+							<!--...-->
+							<div class="field">
+								<%= form.label :image %>
+								<%= form.file_field :image %>
+							</div>
+
+							<!--...-->
+						<% end %>
+						```
+						---
+						En el **app/controllers/actors_controller.rb** deberemos agregar :image como parametro permitido:
+
+						```ruby
+						class ActorsController < ApplicationController
+						# ...
+							def actor_params
+								params.require(:actor).permit(:first_name, :last_name, :age, :image)
+							end
+						end
+						```
+
+						---
+						En la vista **app/views/tv_shows/show.html.erb** podemos mostrar la imagen del actor/actriz con la 
+						siguiente modificación:
+						
+						```erb
+						<p><strong>Actors:</strong></p>
+						<ul>
+							# ...
+								<% @tv_show.actors.each do |actor|%>
+									# ...
+									
+									
+									<% if actor.image.attached? %>
+										<li><%= image_tag(actor.image, size: '50x50') %></li>
+									<% end %>
+								
+								
+									# ...	
+								<% end %>
+						</ul>
+						```
+						---
+						## [Que aprendimos hoy?](#)
+						- Aprendimos a configurar Active Storage.
+						- Vimos como implementar Active Storage en un formulario.
+						---
+						## [Bibliografía](#)
+						- [https://edgeguides.rubyonrails.org](https://edgeguides.rubyonrails.org/active_storage_overview.html)
+						- [https://pragmaticstudio.com](https://pragmaticstudio.com/tutorials/using-active-storage-in-rails)
+				  </textarea>
+				</section>
+			</div>
+		</div>
+
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.js" integrity="sha512-fEgazVdZLNymIm9n+b2jtCrM4DQiqNTfLNUxbsGSFUJpYemf9A8GxgJ3VAfU/Lc6yZkDdEOdekBDZtG/mf73fQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/notes/notes.min.js" integrity="sha512-nLsCkPS/rdxRVOkxiKnld9KhQ24V/5kRChzSZ3MoFODykbWyBlQRsHLrbpN3J4LabYBnXIp1EnRIo3ifvyiQIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/markdown/markdown.min.js" integrity="sha512-QAU7Ux8iEB53koLKFCtddfFp0D1+uQWoX3ROnRDLeiE98XHOkMciaup0Spc014jQAuJaqz8VjUZdBqriheI4Lg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/highlight/highlight.min.js" integrity="sha512-U3fPDUX5bMrn1wnYqjaK44MFA9E6MKS+zPAg9WPAGF5XhReBeDj3FGaA831CjueG+YJxYA3WaO/m33kMIoOs/A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+			// More info about initialization & config:
+			// - https://revealjs.com/initialization/
+			// - https://revealjs.com/config/
+			Reveal.initialize({
+				hash: true,
+
+				// Learn about plugins: https://revealjs.com/plugins/
+				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
+			});
+		</script>
+	</body>
+</html>

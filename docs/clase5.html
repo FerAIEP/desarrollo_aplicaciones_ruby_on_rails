@@ -1,0 +1,293 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>Introducción al Desarrollo de Aplicaciones con Ruby on Rails | AIEP</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.css" integrity="sha512-ITH3NSfntO7uI5n+BnxGNXpzDUoOsmAXuG37UDONLxNYIdc0EBBOOQ1xyc+t9ag9ETSuBXFApx+Rod0uURfDYw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reset.min.css" integrity="sha512-Mjxkx+r7O/OLQeKeIBCQ2yspG1P5muhAtv/J+p2/aPnSenciZWm5Wlnt+NOUNA4SHbnBIE/R2ic0ZBiCXdQNUg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/theme/solarized.min.css" integrity="sha512-sUF1FAUpi9yPXCDOPsRwzh71zrCVkcT4SfwxBlQeHwMbH1aTGcSdI00GRLaH6iXRSBTazGH/u6sGQTc1tGqofg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- Theme used for syntax highlighted code -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/highlight/zenburn.min.css" integrity="sha512-JPxjD2t82edI35nXydY/erE9jVPpqxEJ++6nYEoZEpX2TRsmp2FpZuQqZa+wBCen5U16QZOkMadGXHCfp+tUdg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  </head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+				<section data-separator="---" data-markdown data-line-numbers>
+    			<textarea data-template>
+						## [Desarrollo de Aplicaciones con Ruby on Rails](#)
+						#### Profesor: Fernando Ciballero
+						---
+						## [Unidad 2: Autenticación con Devise](#)
+						## [Clase 5](#)
+						### Uso de helpers de devise.
+						---
+						## [Mostrando información en función de si el usuario ha ingresado o no](#) 
+						
+						---
+						<img src="https://res.cloudinary.com/dhbkl5d9a/image/upload/v1653705451/modulo8/add_user_table_yeohtz.png" alt="" height="600">
+						---
+						Continuando con lo de la clase anterior vamos a agregar una FK a la tabla tv_shows
+						mediante la siguiente migración:
+
+						```console
+						$ rails g migration addUserReferenceToTvShows user:references
+						```
+						---
+
+						```ruby
+						class AddUserReferenceToTvShows < ActiveRecord::Migration[6.1]
+							def change
+								add_reference :tv_shows, :user, null: false, foreign_key: true
+							end
+						end
+						```
+						---
+						Ahora reseteamos nuestra base de datos:
+						
+						```console
+						$ rails db:drop db:create db:migrate
+						```
+						---
+						Procedemos ahora a crear usuarios:
+
+						```console
+						User.create!(email: 'user1@gmail.com', password: 123456)
+						```
+
+						```console
+						User.create!(email: 'user2@gmail.com', password: 123456)
+						```
+						---
+
+						Agregamos las relaciones en los modelos:
+
+						```ruby
+						class User < ApplicationRecord
+							has_many :tv_shows, dependent: :destroy
+						end
+						```
+
+						```ruby
+						class TvShow < ApplicationRecord
+							belongs_to :user
+						end
+						```
+						---
+						Modificamos el seed agregandole el usuario asociado al tv_show:
+
+						```ruby
+						puts 'creando nacionalidades'
+
+						Nationality.destroy_all
+
+						Nationality.create([
+							{name: 'Estados Unidos', description: 'una description opcional', flag_img: 'https://flagcdn.com/32x24/us.png'},
+							{name: 'Finlandia', description: 'una description opcional', flag_img: 'https://flagcdn.com/32x24/fi.png'},
+							{name: 'Italia', description: 'una description opcional', flag_img: 'https://flagcdn.com/32x24/it.png'},
+							{name: 'Korea del sur', description: 'una description opcional', flag_img: 'https://flagcdn.com/32x24/kr.png'}
+						])
+
+						puts 'nacionalidades creadas!!!'
+
+						puts 'creando series de tv...'
+
+						TvShow.destroy_all
+
+						TvShow.create!(
+							[
+								{
+									name: 'game of thrones',
+									summary: 'Years after a rebellion spurred by a stolen bride to be and the blind ambitions of a mad King',
+									release_date: '2011-04-17',
+									rating: 7.8,
+									nationality: Nationality.find_by(name: 'Finlandia'),
+									user: User.find_by(email: 'user1@gmail.com')
+								},
+								{
+									name: 'Squid Game',
+									summary: 'The series revolves around Seong Gi-hun, a divorced and indebted chauffeur, who is invited to play a series of children\'s games for a chance earning a large cash prize.' ,
+									release_date: '17-09-2021',
+									rating: 5.6,
+									nationality: Nationality.find_by(name: 'Korea del sur'),
+									user: User.find_by(email: 'user2@gmail.com')
+								},
+								{
+									name: 'Angry Birds',
+									summary: 'Red, an angry bird, has been an outcast from Bird Island ever since he was a hatchling due to his short temper and his huge, jet-black eyebrows.',
+									release_date: '05-02-2016',
+									rating: 6.1,
+									nationality: Nationality.find_by(name: 'Estados Unidos'),
+									user: User.find_by(email: 'user2@gmail.com')
+								},
+								{
+									name: 'Jaws 2',
+									summary: 'Chief Brody suspecting another great white shark is terrorizing the fictional sea side resort of Amity Island, following a series of incidents and disappearances, and his suspicions are eventually proven true.',
+									release_date: '16-06-1978',
+									rating: 9.8,
+									nationality: Nationality.find_by(name: 'Estados Unidos'),
+									user: User.find_by(email: 'user2@gmail.com')
+								},
+								{
+									name: 'Agatha Christie\'s Crooked House',
+									summary: 'The granddaughter of late Greek-British business tycoon Aristide Leonides, Sophia Leonides, visits private investigator Charles Hayward in his office.',
+									release_date: '31-10-2017',
+									rating: 8.6,
+									nationality: Nationality.find_by(name: 'Italia'),
+									user: User.find_by(email: 'user1@gmail.com')
+								},
+								{
+									name: 'Blade Runner: The Final Cut',
+									summary: 'A blade runner must pursue and terminate four replicants who stole a ship in space, and have returned to Earth to find their creator.',
+									release_date: '25-06-1982',
+									rating: 6.5,
+									nationality: Nationality.find_by(name: 'Estados Unidos'),
+									user: User.find_by(email: 'user1@gmail.com')
+								}
+							]
+						)
+
+						puts 'finalizado!!!'
+						```
+						---
+						Ejecutamos el seed:
+
+						```console
+						$ rails db:seed
+						```
+
+						---
+						#### [Redireccionando en función de si un usuario ha ingresado: helper: authenticate_user!](#)
+
+						Finalmente agregaremos un helper en cada controlador de necesitamos proteger con un login
+
+						```ruby
+						class TvShowsController < ApplicationController
+							before_action :authenticate_user!, except: %i[index]
+
+							# ...
+
+							# GET /tv_shows/new
+
+							def create
+								@tv_show = current_user.tv_shows.build(tv_show_params)
+								# ...
+							end
+						end
+						```
+						---
+						- De momento vamos a proteger TvShowController ya que contiene de momento todas las vistas del proyecto.
+						- La unica vista disponible para usuarios no registrados va a ser la vista index de tv_shows
+						---
+
+						En **app/views/layouts/application.hmtl.erb** diseñamos un menu para acceder al login:
+						```erb
+						<!DOCTYPE html>
+						<html>
+							<head>
+								<title>MyFavoriteTvSeriesM9</title>
+								<meta name="viewport" content="width=device-width,initial-scale=1">
+								<%= csrf_meta_tags %>
+								<%= csp_meta_tag %>
+
+								<%= stylesheet_link_tag 'application', media: 'all', 'data-turbolinks-track': 'reload' %>
+								<%= javascript_pack_tag 'application', 'data-turbolinks-track': 'reload' %>
+							</head>
+
+							<body>
+								<% if user_signed_in? %>
+									<div>
+										<p>Bienvenido <%= current_user.email %>!!</p>
+										<%= link_to 'Log out', destroy_user_session_path, method: :delete %>
+									</div>
+								<% else %>
+									<div>
+										<%= link_to 'Sign up', new_user_registration_path %> |
+										<%= link_to 'Log in', new_user_session_path %>
+									</div>
+								<% end %>
+								<%= yield %>
+							</body>
+						</html>
+						```
+						---
+						## [Asociando recursos al usuario que ha iniciado sesión](#)
+
+						Ahora editamos **app/views/tv_shows/index.html.erb** para restringir ciertas partes de la vista
+						según acceda un usuario registrado o no.
+
+						```erb
+						<!--...-->
+							<tbody>
+								<% @tv_shows.each do |tv_show| %>
+									<tr>
+										<!--...-->
+										<% if user_signed_in? %>
+											<td><%= link_to 'Show', tv_show %></td>
+										<% end %>
+										<% if (user_signed_in? && (current_user == tv_show.user)) %>
+											<td><%= link_to 'Edit', edit_tv_show_path(tv_show) %></td>
+											<td><%= link_to 'Destroy', tv_show, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+										<% end %>
+									</tr>
+								<% end %>
+							</tbody>
+						</table>
+
+						<br>
+
+						<% if user_signed_in? %>
+							<%= link_to 'New Tv Show', new_tv_show_path %>
+						<% end %>
+						```
+
+						---
+
+						Mediante el uso de:
+
+						```erb
+						<% if user_signed_in? %>
+						```
+						Vamos a restringir el acceso de un usuario no logueado a ciertas partes de la vista index
+
+						O tenemos esta línea de código:
+
+						```erb
+						<% if (user_signed_in? && (current_user == tv_show.user)) %>
+						```
+
+						Que aparte de necesitar que el usuario esté logueado necesita que el usuario se el propietario
+						del registro en la base de datos.
+						---
+						## [Que aprendimos hoy?](#)
+						- Aprendimos a crear el login de usuarios con devise.
+						- Vimos sobre el uso de los helpers de devise.
+
+						---
+						## [Bibliografía](#)
+						- [https://github-wiki-see.page](https://github-wiki-see.page/m/heartcombo/devise/wiki/How-To%3A-Add-an-Admin-Role)
+						- [Documentación devise](https://github.com/heartcombo/devise)
+				  </textarea>
+				</section>
+			</div>
+		</div>
+
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.js" integrity="sha512-fEgazVdZLNymIm9n+b2jtCrM4DQiqNTfLNUxbsGSFUJpYemf9A8GxgJ3VAfU/Lc6yZkDdEOdekBDZtG/mf73fQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/notes/notes.min.js" integrity="sha512-nLsCkPS/rdxRVOkxiKnld9KhQ24V/5kRChzSZ3MoFODykbWyBlQRsHLrbpN3J4LabYBnXIp1EnRIo3ifvyiQIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/markdown/markdown.min.js" integrity="sha512-QAU7Ux8iEB53koLKFCtddfFp0D1+uQWoX3ROnRDLeiE98XHOkMciaup0Spc014jQAuJaqz8VjUZdBqriheI4Lg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/highlight/highlight.min.js" integrity="sha512-U3fPDUX5bMrn1wnYqjaK44MFA9E6MKS+zPAg9WPAGF5XhReBeDj3FGaA831CjueG+YJxYA3WaO/m33kMIoOs/A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+			// More info about initialization & config:
+			// - https://revealjs.com/initialization/
+			// - https://revealjs.com/config/
+			Reveal.initialize({
+				hash: true,
+
+				// Learn about plugins: https://revealjs.com/plugins/
+				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
+			});
+		</script>
+	</body>
+</html>

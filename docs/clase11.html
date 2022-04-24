@@ -1,0 +1,150 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>Introducción al Desarrollo de Aplicaciones con Ruby on Rails | AIEP</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.css" integrity="sha512-ITH3NSfntO7uI5n+BnxGNXpzDUoOsmAXuG37UDONLxNYIdc0EBBOOQ1xyc+t9ag9ETSuBXFApx+Rod0uURfDYw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reset.min.css" integrity="sha512-Mjxkx+r7O/OLQeKeIBCQ2yspG1P5muhAtv/J+p2/aPnSenciZWm5Wlnt+NOUNA4SHbnBIE/R2ic0ZBiCXdQNUg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/theme/solarized.min.css" integrity="sha512-sUF1FAUpi9yPXCDOPsRwzh71zrCVkcT4SfwxBlQeHwMbH1aTGcSdI00GRLaH6iXRSBTazGH/u6sGQTc1tGqofg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- Theme used for syntax highlighted code -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/highlight/zenburn.min.css" integrity="sha512-JPxjD2t82edI35nXydY/erE9jVPpqxEJ++6nYEoZEpX2TRsmp2FpZuQqZa+wBCen5U16QZOkMadGXHCfp+tUdg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  </head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+				<section data-separator="---" data-markdown data-line-numbers>
+    			<textarea data-template>
+						## [Desarrollo de Aplicaciones con Ruby on Rails](#)
+						#### Profesor: Fernando Ciballero
+						---
+						## [Unidad 4: Subida de archivos con activestorage y Cloudinary](#)
+						## [Clase 11](#)
+						### Implementación de Active Storage con Cloudinary.
+						---
+						## [Configurando Active Storage y Cloudinary](#)
+
+						Hasta el momento hemos estado almacenando las imagenes en la carpeta [/storage] de nuestra aplicación.
+
+						---
+						Esto no sería la mejor opción si queremos alamacenar una gran cantidad de archivos.
+
+						---
+						Para un uso profesional de nuestra aplicación, necesitamos de servicios en la nube que nos provean de un
+						sistema de almacenamiento de archivos confiable rápido y seguro.
+
+						---
+						Un ejemplo de esto es [Cloudinary](https://cloudinary.com/) que nos brinda esta posibilidad, con la ventaja
+						de que en una etapa inicial es gratuito(pasado un limite de uso debemos pasar a un plan pago del servicio).
+
+						---
+						Primeros pasos:
+
+						Vamos a comenzar creando una cuenta de usuario en este [link](https://cloudinary.com/users/register/free)
+
+						---
+						Copiamos este código en el Gemfile
+
+						```ruby
+						gem 'cloudinary'
+						gem 'dotenv-rails', groups: [:development, :test]
+						```
+						Luego ejecutamos [bundle](#)
+
+						---
+						Ahora vamos a crear un archivo llamado [.env](#) dentro del directorio rails del proyecto.
+
+						---
+						Luego debemos agregar esta línea de código en el archivo [.gitignore](#) de nuestro proyecto
+
+						```
+						#ignore environment variables
+						.env
+						```
+
+						---
+						Dentro de .env copiamos lo siguiente
+
+						```.env
+						CLOUDINARY_URL= 'Mi url de cloudinary'
+						```
+
+						Vamos a reemplazar el contenido entre comillas por las credenciales de [nuestra cuenta](https://cloudinary.com/console)
+
+						---
+						A continuación deberemos agregar nuestras credenciales de cloudinary en la [config/storage.yml](#)
+
+						```yaml
+						cloudinary:
+							service: Cloudinary
+							folder: ENV['CLOUDINARY_URL']
+						```
+
+						---
+						## [Atención!!!](#)
+
+						La idea del archivo [.env](#) es evitar que expongamos nuestra claves personales en Github, asi que a prestar muchas Atención
+						en los pasos antes mencionados!!!
+
+						---
+						Luego debemos elegir esta configuración en el archivo [config/environments/development.rb] buscando la siguiente línea:
+
+						 ```ruby
+						 config.active_storage.service = :local
+						 ```
+						 Por esta configuración:
+
+						 ```ruby
+						 config.active_storage.service = :cloudinary
+						 ```
+
+						---
+						Eliminamos ahora las imagenes almacenadas la clase pasada, para almacenar de ahora en más la imágenes en Cloudinary
+						Ingresamos a [rails console](#) el siguiente comando:
+
+						```ruby
+						Actor.all.each do |actor|
+							actor.image.purge if actor.image.attached?
+						end
+						```
+						---
+						Ahora podemos reemplazar todas las etiquetas [image_tag](#) por [cl_image_tag](#) para poder acceder a las imagenes almacenadas
+						en Cloudinary, como en este ejemplo.
+
+						```erb
+						<%= cl_image_tag(actor.image.key, width: 120, height: 80) %>
+						```
+						---
+						De esta manera vamos a tener un servicio en la nube para el alcenamiento de nuestro archivos.
+
+						---
+						## [Que aprendimos hoy?](#)
+						- Vimos como vincular Active Storage con Cloudinary.
+						---
+						## [Bibliografía](#)
+						- [Documentación Cloudinary Rails](https://cloudinary.com/documentation/rails_integration)
+						- [https://codigofacilito.com](https://codigofacilito.com/articulos/active-storage)
+				  </textarea>
+				</section>
+			</div>
+		</div>
+
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.js" integrity="sha512-fEgazVdZLNymIm9n+b2jtCrM4DQiqNTfLNUxbsGSFUJpYemf9A8GxgJ3VAfU/Lc6yZkDdEOdekBDZtG/mf73fQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/notes/notes.min.js" integrity="sha512-nLsCkPS/rdxRVOkxiKnld9KhQ24V/5kRChzSZ3MoFODykbWyBlQRsHLrbpN3J4LabYBnXIp1EnRIo3ifvyiQIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/markdown/markdown.min.js" integrity="sha512-QAU7Ux8iEB53koLKFCtddfFp0D1+uQWoX3ROnRDLeiE98XHOkMciaup0Spc014jQAuJaqz8VjUZdBqriheI4Lg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/highlight/highlight.min.js" integrity="sha512-U3fPDUX5bMrn1wnYqjaK44MFA9E6MKS+zPAg9WPAGF5XhReBeDj3FGaA831CjueG+YJxYA3WaO/m33kMIoOs/A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+			// More info about initialization & config:
+			// - https://revealjs.com/initialization/
+			// - https://revealjs.com/config/
+			Reveal.initialize({
+				hash: true,
+
+				// Learn about plugins: https://revealjs.com/plugins/
+				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
+			});
+		</script>
+	</body>
+</html>
